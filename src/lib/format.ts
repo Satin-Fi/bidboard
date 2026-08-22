@@ -36,3 +36,13 @@ export function timeAgo(ts: number): string {
   if (h < 24) return `${h}h ago`
   return `${Math.floor(h / 24)}d ago`
 }
+
+/** Cost per mille — price divided by impressions per 1000 (weekly basis). */
+export function cpm(price: number, weeklyImpressions: number): number {
+  if (weeklyImpressions <= 0) return 0
+  return (price / (weeklyImpressions / 1000))
+}
+
+export function formatCpm(price: number, weeklyImpressions: number): string {
+  return '$' + cpm(price, weeklyImpressions).toFixed(2)
+}

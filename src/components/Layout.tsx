@@ -18,6 +18,9 @@ export default function Layout() {
             <Link to="/" className="text-sm text-muted hover:text-white px-2 py-1 hidden sm:inline">
               Browse
             </Link>
+            <Link to="/dashboard" className="text-sm text-muted hover:text-white px-2 py-1 hidden sm:inline">
+              Dashboard
+            </Link>
             <Link to="/sell" className="btn-accent !py-1.5 !px-3 text-sm">
               Sell a slot
             </Link>

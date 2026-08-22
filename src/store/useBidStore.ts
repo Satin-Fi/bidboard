@@ -1,32 +1,39 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Bid, Listing, ListingFormat } from '../types'
+import type { Bid, Listing, ListingFormat, Category, AuctionType } from '../types'
 import { seedListings } from '../data/seed'
 
-export type SortKey = 'ending' | 'bid' | 'new' | 'impr'
+export type SortKey = 'ending' | 'bid' | 'new' | 'impr' | 'cpm'
+
+interface SavedSearch {
+  id: string
+  q: string
+  format: ListingFormat | 'All'
+  category: Category | 'All'
+}
 
 interface BidState {
   listings: Listing[]
   bids: Bid[]
   watched: string[]
   sort: SortKey
+  savedSearches: SavedSearch[]
   /** advance auction clocks — flips live->ended when past endsAt */
   tick: () => void
-  placeBid: (
-    listingId: string,
-    amount: number,
-    bidder: string,
-  ) => { ok: boolean; error?: string }
-  /** automated rival bid (no toast) */
+  /** current displayed price for a listing (handles reverse decline) */
+  displayPrice: (l: Listing) => number
+  placeBid: (listingId: string, amount: number, bidder: string) => { ok: boolean; error?: string; winning?: boolean }
+  /** automated rival bid (timed) */
   rivalBid: (listingId: string) => void
-  createListing: (
-    l: Omit<
-      Listing,
-      'id' | 'currentBid' | 'bidCount' | 'topBidder' | 'status' | 'createdAt'
-    >,
-  ) => string
+  /** accept the current (declining) price of a reverse auction */
+  acceptReverse: (listingId: string, bidder: string) => { ok: boolean; error?: string }
+  createListing: (l: Omit<Listing, 'id' | 'currentBid' | 'bidCount' | 'topBidder' | 'status' | 'createdAt'>) => string
+  /** seller closes an auction early */
+  closeEarly: (listingId: string) => void
   toggleWatch: (id: string) => void
   setSort: (s: SortKey) => void
+  saveSearch: (s: Omit<SavedSearch, 'id'>) => void
+  removeSearch: (id: string) => void
   resetDemo: () => void
 }
 
@@ -46,6 +53,15 @@ const RIVALS = [
 
 const ANTISNIPE_MS = 3 * 60 * 1000
 
+/** current price for a reverse (Dutch) auction, declining from startPrice. */
+function reversePrice(l: Listing, nowMs = Date.now()): number {
+  if (l.auctionType !== 'reverse' || !l.startPrice) return l.currentBid
+  const elapsedH = Math.max(0, (nowMs - l.createdAt) / (60 * 60 * 1000))
+  const dropped = (l.declinePerHour ?? 0) * elapsedH
+  const price = Math.max(l.reserve, l.startPrice - dropped)
+  return Math.round(price)
+}
+
 export const useBidStore = create<BidState>()(
   persist(
     (set, get) => ({
@@ -53,6 +69,7 @@ export const useBidStore = create<BidState>()(
       bids: [],
       watched: [],
       sort: 'ending',
+      savedSearches: [],
 
       tick: () =>
         set((state) => ({
@@ -63,6 +80,13 @@ export const useBidStore = create<BidState>()(
           ),
         })),
 
+      displayPrice: (l) =>
+        l.auctionType === 'reverse'
+          ? reversePrice(l)
+          : l.currentBid > 0
+            ? l.currentBid
+            : l.reserve,
+
       placeBid: (listingId, amount, bidder) => {
         const listing = get().listings.find((l) => l.id === listingId)
         if (!listing) return { ok: false, error: 'Listing not found.' }
@@ -72,13 +96,7 @@ export const useBidStore = create<BidState>()(
         if (amount < minNext)
           return { ok: false, error: `Bid must be at least ${formatFloor(minNext)}.` }
 
-        const bid: Bid = {
-          id: newId(),
-          listingId,
-          amount,
-          bidder,
-          at: Date.now(),
-        }
+        const bid: Bid = { id: newId(), listingId, amount, bidder, at: Date.now() }
         set((state) => {
           const listings = state.listings.map((l) =>
             l.id === listingId
@@ -87,7 +105,6 @@ export const useBidStore = create<BidState>()(
                   currentBid: amount,
                   bidCount: l.bidCount + 1,
                   topBidder: bidder,
-                  // anti-snipe: a late bid extends the auction by 3 minutes
                   endsAt:
                     l.endsAt - Date.now() < ANTISNIPE_MS
                       ? Date.now() + ANTISNIPE_MS
@@ -102,14 +119,31 @@ export const useBidStore = create<BidState>()(
 
       rivalBid: (listingId) => {
         const listing = get().listings.find((l) => l.id === listingId)
-        if (!listing || listing.status !== 'live') return
+        if (!listing || listing.status !== 'live' || listing.auctionType !== 'timed') return
         const minNext =
           listing.currentBid > 0 ? listing.currentBid + 100 : listing.reserve
-        // bid somewhere between min and min + 8% (capped to keep it believable)
         const bump = Math.max(100, Math.round((minNext * 0.08) / 100) * 100)
         const amount = minNext + Math.floor(Math.random() * (bump / 100 + 1)) * 100
         const bidder = RIVALS[Math.floor(Math.random() * RIVALS.length)]
         get().placeBid(listingId, amount, bidder)
+      },
+
+      acceptReverse: (listingId, bidder) => {
+        const listing = get().listings.find((l) => l.id === listingId)
+        if (!listing) return { ok: false, error: 'Listing not found.' }
+        if (listing.status !== 'live' || listing.auctionType !== 'reverse')
+          return { ok: false, error: 'This auction is not open.' }
+        const price = reversePrice(listing)
+        const bid: Bid = { id: newId(), listingId, amount: price, bidder, at: Date.now(), winning: true }
+        set((state) => ({
+          bids: [bid, ...state.bids],
+          listings: state.listings.map((l) =>
+            l.id === listingId
+              ? { ...l, currentBid: price, bidCount: l.bidCount + 1, topBidder: bidder, status: 'ended' }
+              : l,
+          ),
+        }))
+        return { ok: true }
       },
 
       createListing: (input) => {
@@ -127,6 +161,15 @@ export const useBidStore = create<BidState>()(
         return id
       },
 
+      closeEarly: (listingId) =>
+        set((state) => ({
+          listings: state.listings.map((l) =>
+            l.id === listingId && l.status === 'live'
+              ? { ...l, status: 'ended', endsAt: Date.now() }
+              : l,
+          ),
+        })),
+
       toggleWatch: (id) =>
         set((state) => ({
           watched: state.watched.includes(id)
@@ -136,8 +179,18 @@ export const useBidStore = create<BidState>()(
 
       setSort: (s) => set({ sort: s }),
 
+      saveSearch: (s) =>
+        set((state) => ({
+          savedSearches: [...state.savedSearches, { ...s, id: newId() }],
+        })),
+
+      removeSearch: (id) =>
+        set((state) => ({
+          savedSearches: state.savedSearches.filter((x) => x.id !== id),
+        })),
+
       resetDemo: () =>
-        set({ listings: seedListings, bids: [], watched: [], sort: 'ending' }),
+        set({ listings: seedListings, bids: [], watched: [], sort: 'ending', savedSearches: [] }),
     }),
     {
       name: 'bidboard-v1',
@@ -147,6 +200,7 @@ export const useBidStore = create<BidState>()(
         bids: s.bids,
         watched: s.watched,
         sort: s.sort,
+        savedSearches: s.savedSearches,
       }),
     },
   ),
@@ -161,4 +215,4 @@ function formatFloor(n: number): string {
 }
 
 export { RIVALS }
-export type { ListingFormat }
+export type { ListingFormat, Category, AuctionType }
