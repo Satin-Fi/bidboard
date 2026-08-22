@@ -26,6 +26,17 @@ export interface Listing {
   bidCount: number
   topBidder: string | null
   status: 'live' | 'ended'
+  // --- enrichment ---
+  /** Epoch ms when the listing was created (for "New" + sorting) */
+  createdAt: number
+  /** Physical size, e.g. "14×48 ft" */
+  size: string
+  /** Illumination / build type */
+  illumination: string
+  /** Target audience description */
+  audience: string
+  /** Dayparted / scheduled buying available */
+  dayparting: boolean
 }
 
 export interface Bid {

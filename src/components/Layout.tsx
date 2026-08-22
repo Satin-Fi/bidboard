@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
+import ToastViewport from './ToastViewport'
 
 export default function Layout() {
   return (
@@ -14,7 +15,7 @@ export default function Layout() {
             </span>
           </Link>
           <nav className="flex items-center gap-1 sm:gap-3">
-            <Link to="/" className="text-sm text-muted hover:text-white px-2 py-1">
+            <Link to="/" className="text-sm text-muted hover:text-white px-2 py-1 hidden sm:inline">
               Browse
             </Link>
             <Link to="/sell" className="btn-accent !py-1.5 !px-3 text-sm">
@@ -33,9 +34,11 @@ export default function Layout() {
           <span>
             © {new Date().getFullYear()} Bidboard — the auction house for outdoor advertising.
           </span>
-          <span>Bids shown in this demo are simulated locally.</span>
+          <span>Bids in this demo are simulated locally &amp; persist in your browser.</span>
         </div>
       </footer>
+
+      <ToastViewport />
     </div>
   )
 }

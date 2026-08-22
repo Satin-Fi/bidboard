@@ -21,6 +21,11 @@ export const seedListings: Listing[] = [
     bidCount: 14,
     topBidder: 'Apex Beverages',
     status: 'live',
+    createdAt: now - 5 * HOUR,
+    size: '36 × 96 ft',
+    illumination: 'Full LED',
+    audience: 'Tourists & shoppers 18–54',
+    dayparting: true,
   },
   {
     id: 'bb-002',
@@ -39,6 +44,11 @@ export const seedListings: Listing[] = [
     bidCount: 6,
     topBidder: 'Coastline Realty',
     status: 'live',
+    createdAt: now - 9 * HOUR,
+    size: '14 × 48 ft',
+    illumination: 'Reflective',
+    audience: 'Commuters 25–54',
+    dayparting: false,
   },
   {
     id: 'bb-003',
@@ -57,6 +67,11 @@ export const seedListings: Listing[] = [
     bidCount: 21,
     topBidder: 'North Branch Coffee',
     status: 'live',
+    createdAt: now - 2 * HOUR,
+    size: '6-sheet (47 × 70 in)',
+    illumination: 'Digital',
+    audience: 'Pedestrians & office workers',
+    dayparting: true,
   },
   {
     id: 'bb-004',
@@ -75,6 +90,11 @@ export const seedListings: Listing[] = [
     bidCount: 0,
     topBidder: null,
     status: 'live',
+    createdAt: now - 14 * HOUR,
+    size: 'Full train wrap',
+    illumination: 'Vinyl wrap',
+    audience: 'Commuters 22–60',
+    dayparting: false,
   },
   {
     id: 'bb-005',
@@ -93,6 +113,11 @@ export const seedListings: Listing[] = [
     bidCount: 9,
     topBidder: 'Foundry Labs',
     status: 'live',
+    createdAt: now - 1 * HOUR,
+    size: 'Bus shelter (4 × 6 ft)',
+    illumination: 'Backlit',
+    audience: 'Pedestrians & transit riders',
+    dayparting: true,
   },
   {
     id: 'bb-006',
@@ -111,5 +136,13 @@ export const seedListings: Listing[] = [
     bidCount: 3,
     topBidder: 'BBQ Nation',
     status: 'live',
+    createdAt: now - 20 * HOUR,
+    size: '20 × 60 ft',
+    illumination: 'Reflective',
+    audience: 'Commuters 25–54',
+    dayparting: false,
   },
 ]
+
+/** Seed listing ids — used so user-created listings persist but seed stays evergreen. */
+export const SEED_IDS: string[] = seedListings.map((l) => l.id)

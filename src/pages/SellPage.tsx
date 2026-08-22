@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
+import { useUiStore } from '../store/useUiStore'
 import { FORMATS, type ListingFormat } from '../types'
 
 const GRADIENTS = [
@@ -14,6 +15,7 @@ const GRADIENTS = [
 
 export default function SellPage() {
   const createListing = useBidStore((s) => s.createListing)
+  const push = useUiStore((s) => s.push)
   const navigate = useNavigate()
 
   const [title, setTitle] = useState('')
@@ -26,6 +28,10 @@ export default function SellPage() {
   const [hours, setHours] = useState('48')
   const [gradient, setGradient] = useState(GRADIENTS[0])
   const [description, setDescription] = useState('')
+  const [size, setSize] = useState('')
+  const [illumination, setIllumination] = useState('Reflective')
+  const [audience, setAudience] = useState('')
+  const [dayparting, setDayparting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const submit = (e: FormEvent) => {
@@ -34,7 +40,6 @@ export default function SellPage() {
       setError('Title, owner and city are required.')
       return
     }
-    const impr = Number(impressions)
     const res = Number(reserve)
     const dur = Number(hours)
     if (!res || res <= 0) {
@@ -48,11 +53,16 @@ export default function SellPage() {
       address: address.trim() || city.trim(),
       gradient,
       format,
-      weeklyImpressions: impr > 0 ? impr : 0,
+      weeklyImpressions: Number(impressions) > 0 ? Number(impressions) : 0,
       reserve: res,
       description: description.trim() || 'No description provided.',
       endsAt: Date.now() + (dur > 0 ? dur : 48) * 60 * 60 * 1000,
+      size: size.trim() || '—',
+      illumination,
+      audience: audience.trim() || 'General public',
+      dayparting,
     })
+    push('Slot published to the open auction.', 'ok')
     navigate(`/listing/${id}`)
   }
 
@@ -85,6 +95,15 @@ export default function SellPage() {
               ))}
             </select>
           </Field>
+          <Field label="Physical size">
+            <input className="input" value={size} onChange={(e) => setSize(e.target.value)} placeholder="14 × 48 ft" />
+          </Field>
+          <Field label="Illumination">
+            <input className="input" value={illumination} onChange={(e) => setIllumination(e.target.value)} placeholder="Reflective / LED / Backlit" />
+          </Field>
+          <Field label="Audience">
+            <input className="input" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="Commuters 25-54" />
+          </Field>
           <Field label="Weekly impressions">
             <input className="input" type="number" value={impressions} onChange={(e) => setImpressions(String(Number(e.target.value)))} placeholder="250000" />
           </Field>
@@ -95,6 +114,11 @@ export default function SellPage() {
             <input className="input" type="number" value={hours} onChange={(e) => setHours(String(Number(e.target.value)))} placeholder="48" />
           </Field>
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
+          <input type="checkbox" checked={dayparting} onChange={(e) => setDayparting(e.target.checked)} className="h-4 w-4" />
+          Dayparted / scheduled buying available
+        </label>
 
         <Field label="Description">
           <textarea className="input min-h-[90px]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Audience, visibility, posting terms…" />

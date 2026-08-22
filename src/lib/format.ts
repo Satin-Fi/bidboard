@@ -1,10 +1,12 @@
-export function formatMoney(n: number): string {
+export function money(n: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
   }).format(n)
 }
+
+export const formatMoney = money
 
 export function formatImpressions(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
@@ -22,4 +24,15 @@ export function timeRemaining(endsAt: number, nowMs: number): string | null {
   if (h > 0) return `${h}h ${m}m`
   if (m > 0) return `${m}m ${s}s`
   return `${s}s`
+}
+
+/** Short relative time, e.g. "3h ago" / "2d ago". */
+export function timeAgo(ts: number): string {
+  const diff = Date.now() - ts
+  const m = Math.floor(diff / 60_000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
 }
