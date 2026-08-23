@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
 import { formatBid } from '../lib/format'
 import { calculateRank } from '../lib/rules'
-import { createCheckoutSession, saveCompletedOrder, getPendingOrder } from '../lib/payment'
+import { createCheckoutSession, getPendingOrder } from '../lib/payment'
 import { useUiStore } from '../store/useUiStore'
 import { 
   ArrowLeft, 
@@ -16,11 +16,9 @@ import {
 } from 'lucide-react'
 
 export default function CheckoutPage() {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const pushToast = useUiStore((s) => s.push)
   const listings = useBidStore((s) => s.listings)
-  const placeBid = useBidStore((s) => s.placeBid)
 
   const pending = getPendingOrder()
   const queryUrl = searchParams.get('url') || pending?.url || ''
@@ -87,41 +85,15 @@ export default function CheckoutPage() {
         listings
       )
 
-      // 2. If redirected to live Polar / Stripe gateway
-      if (session.status === 'redirect' && session.checkoutUrl) {
+      // 2. Redirect to real Polar checkout gateway
+      if (session.checkoutUrl) {
         window.location.href = session.checkoutUrl
         return
       }
 
-      // 3. Process direct secure payment and award rank
-      const result = placeBid({
-        listingId: queryListingId || undefined,
-        url: url.trim(),
-        title: title.trim() || url.replace(/^https?:\/\//, ''),
-        description: description.trim(),
-        categorySlug: category,
-        amount: Number(amount),
-        bidder: cardholderName.trim() || 'Anonymous',
-      })
-
-      // 4. Save completed order record
-      saveCompletedOrder({
-        id: 'ord_' + Date.now(),
-        sessionId: session.sessionId,
-        amount: Number(amount),
-        email: email.trim(),
-        url: url.trim(),
-        title: title.trim() || url.replace(/^https?:\/\//, ''),
-        description: description.trim(),
-        categorySlug: category,
-        rank: result.rank,
-        createdAt: Date.now(),
-      })
-
-      pushToast(`Payment confirmed! Secured rank #${result.rank}.`, 'ok')
-      navigate(`/checkout/success?session_id=${session.sessionId}&rank=${result.rank}&amount=${amount}`)
+      throw new Error('Polar checkout URL could not be generated.')
     } catch (err: any) {
-      pushToast(err.message || 'Payment processing failed.', 'warn')
+      pushToast(err.message || 'Payment initialization failed. Please try again.', 'warn')
     } finally {
       setIsProcessing(false)
     }

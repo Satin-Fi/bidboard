@@ -1,0 +1,16 @@
+[
+  {
+    "id": "rank-1787511395470",
+    "url": "https://paid.com",
+    "title": "Paid",
+    "description": "",
+    "categorySlug": "ai",
+    "amount": 50,
+    "bidder": "Bob",
+    "isBusiness": false,
+    "rank": 3,
+    "sessionId": "sess_test1",
+    "status": "paid",
+    "createdAt": 1787511395470
+  }
+]

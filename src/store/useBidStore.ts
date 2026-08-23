@@ -36,6 +36,7 @@ interface LeaderboardState {
     amount: number
     bidder?: string
   }) => { rank: number; listing: LeaderboardListing }
+  fetchLeaderboard: () => Promise<void>
   hydrate: (listings: LeaderboardListing[], activities?: ActivityEvent[]) => void
 }
 
@@ -163,6 +164,31 @@ export const useBidStore = create<LeaderboardState>((set, get) => ({
     })
 
     return { rank: newRank, listing: finalItem }
+  },
+
+  fetchLeaderboard: async () => {
+    try {
+      const res = await fetch('/api/leaderboard')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.listings && data.listings.length > 0) {
+          const reRanked = recalculateRanks(data.listings)
+          set((s) => ({
+            listings: reRanked,
+            activities: data.activities || s.activities,
+            stats: data.stats || {
+              ...s.stats,
+              totalRevenue: reRanked.reduce((acc, l) => acc + l.currentBid, 0),
+              totalListings: reRanked.length,
+              totalClicks: reRanked.reduce((acc, l) => acc + l.clickCount, 0),
+            },
+            loaded: true,
+          }))
+        }
+      }
+    } catch {
+      // Fallback to memory store if backend endpoint offline
+    }
   },
 
   hydrate: (listings, activities) => {

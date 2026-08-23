@@ -51,6 +51,15 @@ export async function createCheckoutSession(
             estimatedRank,
           }
         }
+        if (data.status === 'demo') {
+          return {
+            sessionId: 'demo_' + Date.now(),
+            status: 'demo',
+            amount: request.amount,
+            estimatedRank,
+            message: data.message,
+          }
+        }
       }
     } catch {
       // Direct checkout fallback

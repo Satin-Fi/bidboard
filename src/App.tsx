@@ -13,15 +13,13 @@ import { connectWs } from './lib/ws'
 
 export default function App() {
   useEffect(() => {
+    // Initial fetch from real persistent backend
+    useBidStore.getState().fetchLeaderboard()
+
     connectWs((evt) => {
       const store = useBidStore.getState()
       if (evt.type === 'outbid' || evt.type === 'bid.placed') {
-        store.placeBid({
-          listingId: evt.payload.listingId,
-          url: evt.payload.url,
-          amount: evt.payload.amount,
-          bidder: evt.payload.bidder,
-        })
+        store.fetchLeaderboard()
       }
     })
   }, [])

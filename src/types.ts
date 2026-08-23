@@ -96,9 +96,10 @@ export interface CheckoutSessionRequest {
 export interface CheckoutSessionResponse {
   sessionId: string
   checkoutUrl?: string
-  status: 'pending' | 'completed' | 'redirect'
+  status: 'pending' | 'completed' | 'redirect' | 'demo'
   amount: number
   estimatedRank: number
+  message?: string
 }
 
 export interface CompletedOrder {
