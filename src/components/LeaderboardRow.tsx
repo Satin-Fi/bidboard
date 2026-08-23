@@ -12,7 +12,7 @@ export default function LeaderboardRow({ listing }: RowProps) {
   const trackClick = useBidStore((s) => s.trackClick)
 
   return (
-    <div className="group flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-surface hover:bg-surface-2 border border-white/[0.06] hover:border-white/[0.14] transition-all duration-150 shadow-sm">
+    <div className={'group flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-surface hover:bg-surface-2 border border-white/[0.06] hover:border-white/[0.14] transition-all duration-150 shadow-sm ' + (listing.rank === 1 ? 'rank-lit' : listing.rank <= 3 ? 'border-coral-500/15' : '')}>
       {/* Left: Rank + Logo + Content */}
       <div className="flex items-center gap-3.5 flex-1 min-w-0">
         {/* Rank number */}

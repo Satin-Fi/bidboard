@@ -27,12 +27,13 @@ export default function LeaderboardHero() {
   }
 
   return (
-    <section className="pt-6 pb-8 text-center relative overflow-hidden">
+    <section className="pt-6 pb-8 text-center relative overflow-hidden hero-glow">
+      <div className="relative z-10">
       {/* ── Top Live Indicator Badge ─────────────────────────────── */}
       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-2 border border-white/[0.08] text-xs text-neutral-300 mb-6 hover:border-white/[0.15] transition-colors shadow-sm">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 animate-bulb" />
         </span>
         <span className="font-semibold text-emerald-400 font-mono">{stats.onlineCount} online</span>
         <span className="text-neutral-600">·</span>
@@ -119,6 +120,7 @@ export default function LeaderboardHero() {
           Already on the list? Enter the same URL or @handle to top up your bid and climb higher.
         </p>
       </form>
+      </div>
     </section>
   )
 }
