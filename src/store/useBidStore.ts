@@ -1,85 +1,175 @@
 import { create } from 'zustand'
-import type { Listing, ListingFormat, Category, AuctionType } from '../types'
-import { displayPrice } from '../lib/rules'
-import { seedListings } from '../data/seed'
+import type { LeaderboardListing, ActivityEvent, GlobalStats } from '../types'
+import { seedListings, seedActivities } from '../data/seed'
+import { cleanUrl } from '../lib/format'
 
-export type SortKey = 'ending' | 'bid' | 'new' | 'impr' | 'cpm'
-
-interface MarketState {
-  listings: Listing[]
-  bids: Record<string, any[]>
-  watched: string[]
-  savedSearches: { id: string; q: string; format: string; category: string }[]
-  sort: SortKey
-  loaded: boolean
-  hydrate: (listings: Listing[], watched: string[], savedSearches?: MarketState['savedSearches']) => void
-  applyListing: (listing: Listing) => void
-  applyBid: (bid: any, listing: Listing) => void
-  upsert: (listing: Listing, bids?: any[]) => void
-  setBids: (listingId: string, bids: any[]) => void
-  setWatched: (ids: string[]) => void
-  setSavedSearches: (s: MarketState['savedSearches']) => void
-  toggleWatchLocal: (id: string) => void
-  setSort: (s: SortKey) => void
-  reset: () => void
+interface OutbidModalState {
+  open: boolean
+  targetListing?: LeaderboardListing | null
+  targetRank?: number
+  initialUrl?: string
+  initialAmount?: number
+  categorySlug?: string
 }
 
-export const useBidStore = create<MarketState>((set) => ({
-  listings: seedListings,
-  bids: {},
-  watched: [],
-  savedSearches: [],
-  sort: 'ending',
+interface LeaderboardState {
+  listings: LeaderboardListing[]
+  activities: ActivityEvent[]
+  stats: GlobalStats
+  activeCategory: string
+  searchQuery: string
+  modal: OutbidModalState
+  loaded: boolean
+
+  // Actions
+  setCategory: (slug: string) => void
+  setSearch: (q: string) => void
+  openModal: (params?: Partial<OutbidModalState>) => void
+  closeModal: () => void
+  trackClick: (id: string) => void
+  placeBid: (params: {
+    listingId?: string
+    url: string
+    title?: string
+    description?: string
+    categorySlug?: string
+    amount: number
+    bidder?: string
+  }) => { rank: number; listing: LeaderboardListing }
+  hydrate: (listings: LeaderboardListing[], activities?: ActivityEvent[]) => void
+}
+
+function recalculateRanks(list: LeaderboardListing[]): LeaderboardListing[] {
+  // Sort descending by currentBid, then ascending by createdAt
+  const sorted = [...list].sort((a, b) => {
+    if (b.currentBid !== a.currentBid) return b.currentBid - a.currentBid
+    return a.createdAt - b.createdAt
+  })
+  return sorted.map((item, index) => ({
+    ...item,
+    rank: index + 1,
+  }))
+}
+
+export const useBidStore = create<LeaderboardState>((set, get) => ({
+  listings: recalculateRanks(seedListings),
+  activities: seedActivities,
+  stats: {
+    onlineCount: 580,
+    totalVisitors: 1214522,
+    totalRevenue: 177518,
+    launchHoursAgo: 83,
+    totalListings: 1147,
+    totalClicks: 215480,
+  },
+  activeCategory: 'all',
+  searchQuery: '',
+  modal: { open: false },
   loaded: true,
 
-  hydrate: (listings, watched, savedSearches = []) =>
+  setCategory: (slug) => set({ activeCategory: slug }),
+  setSearch: (q) => set({ searchQuery: q }),
+
+  openModal: (params = {}) =>
     set({
-      listings: Array.isArray(listings) && listings.length > 0 ? listings : seedListings,
-      watched,
-      savedSearches,
-      loaded: true,
+      modal: {
+        open: true,
+        targetListing: params.targetListing || null,
+        targetRank: params.targetRank,
+        initialUrl: params.initialUrl || params.targetListing?.url || '',
+        initialAmount: params.initialAmount || (params.targetListing ? params.targetListing.currentBid + 5 : undefined),
+        categorySlug: params.categorySlug || params.targetListing?.categorySlug || 'all',
+      },
     }),
 
-  applyListing: (listing) =>
-    set((s) => ({
-      listings: s.listings.some((l) => l.id === listing.id)
-        ? s.listings.map((l) => (l.id === listing.id ? { ...l, ...listing } : l))
-        : [listing, ...s.listings],
+  closeModal: () => set({ modal: { open: false, targetListing: null } }),
+
+  trackClick: (id) =>
+    set((state) => ({
+      listings: state.listings.map((l) => (l.id === id ? { ...l, clickCount: l.clickCount + 1 } : l)),
+      stats: { ...state.stats, totalClicks: state.stats.totalClicks + 1 },
     })),
 
-  applyBid: (bid, listing) =>
+  placeBid: ({ listingId, url, title, description, categorySlug, amount, bidder = 'Anonymous' }) => {
+    const state = get()
+    const cleaned = cleanUrl(url)
+    let currentListings = [...state.listings]
+    let existing = listingId
+      ? currentListings.find((l) => l.id === listingId)
+      : currentListings.find((l) => l.displayUrl.toLowerCase() === cleaned.toLowerCase() || l.url.toLowerCase() === url.toLowerCase())
+
+    let oldRank: number | undefined = existing?.rank
+    let targetItem: LeaderboardListing
+
+    if (existing) {
+      targetItem = {
+        ...existing,
+        currentBid: amount,
+        owner: bidder,
+        updatedAt: Date.now(),
+      }
+      if (title) targetItem.title = title
+      if (description) targetItem.description = description
+      if (categorySlug && categorySlug !== 'all') targetItem.categorySlug = categorySlug
+      currentListings = currentListings.map((l) => (l.id === existing!.id ? targetItem : l))
+    } else {
+      const id = 'rank-' + Date.now()
+      const domainParts = cleaned.split('.')
+      const name = title || (domainParts.length > 1 ? domainParts[0] : cleaned)
+      targetItem = {
+        id,
+        rank: 999,
+        title: name,
+        url: url.startsWith('http') ? url : `https://${url}`,
+        displayUrl: cleaned,
+        description: description || `Discover ${name} on the public leaderboard.`,
+        logoText: name.slice(0, 2).toUpperCase(),
+        logoBg: 'bg-zinc-800 text-white',
+        category: categorySlug || 'Other',
+        categorySlug: categorySlug || 'other',
+        currentBid: amount,
+        clickCount: 1,
+        createdAt: Date.now(),
+        owner: bidder,
+      }
+      currentListings = [targetItem, ...currentListings]
+    }
+
+    const reRanked = recalculateRanks(currentListings)
+    const finalItem = reRanked.find((l) => l.id === targetItem.id)!
+    const newRank = finalItem.rank
+
+    const newActivity: ActivityEvent = {
+      id: 'act-' + Date.now(),
+      type: newRank === 1 ? 'claim_top' : oldRank ? 'outbid' : 'new_spot',
+      listingId: finalItem.id,
+      listingTitle: finalItem.title,
+      displayUrl: finalItem.displayUrl,
+      amount,
+      oldRank,
+      newRank,
+      createdAt: Date.now(),
+    }
+
+    set({
+      listings: reRanked,
+      activities: [newActivity, ...state.activities.slice(0, 19)],
+      stats: {
+        ...state.stats,
+        totalRevenue: state.stats.totalRevenue + amount,
+      },
+    })
+
+    return { rank: newRank, listing: finalItem }
+  },
+
+  hydrate: (listings, activities) =>
     set((s) => ({
-      listings: s.listings.map((l) => (l.id === listing.id ? { ...l, ...listing } : l)),
-      bids: { ...s.bids, [listing.id]: [bid, ...(s.bids[listing.id] || [])] },
+      listings: recalculateRanks(listings.length > 0 ? listings : s.listings),
+      activities: activities || s.activities,
+      loaded: true,
     })),
-
-  upsert: (listing, bids) =>
-    set((s) => ({
-      listings: s.listings.some((l) => l.id === listing.id)
-        ? s.listings.map((l) => (l.id === listing.id ? { ...l, ...listing } : l))
-        : [listing, ...s.listings],
-      bids: bids ? { ...s.bids, [listing.id]: bids } : s.bids,
-    })),
-
-  setBids: (listingId, bids) => set((s) => ({ bids: { ...s.bids, [listingId]: bids } })),
-
-  setWatched: (ids) => set({ watched: ids }),
-
-  setSavedSearches: (s) => set({ savedSearches: s }),
-
-  toggleWatchLocal: (id) =>
-    set((s) => ({
-      watched: s.watched.includes(id) ? s.watched.filter((w) => w !== id) : [...s.watched, id],
-    })),
-
-  setSort: (s) => set({ sort: s }),
-
-  reset: () => set({ listings: [], bids: {}, watched: [], loaded: false }),
 }))
 
-/** selector helper: current displayed price for a listing */
-export function priceOf(l: Listing): number {
-  return displayPrice(l)
-}
+export type { LeaderboardListing, ActivityEvent, GlobalStats }
 
-export type { ListingFormat, Category, AuctionType }

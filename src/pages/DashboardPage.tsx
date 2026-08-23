@@ -1,94 +1,84 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
-import { closeEarly } from '../store/marketActions'
-import { displayPrice } from '../lib/rules'
-import { formatMoney, formatImpressions, timeRemaining } from '../lib/format'
+import { formatBid, formatClicks, formatNumber, timeAgo } from '../lib/format'
 
 export default function DashboardPage() {
   const listings = useBidStore((s) => s.listings)
-  const watched = useBidStore((s) => s.watched)
-
-  const mine = listings // in a real app this filters by the logged-in owner; demo shows all
-  const live = mine.filter((l) => l.status === 'live')
-  const ended = mine.filter((l) => l.status === 'ended')
-  const totalValue = live.reduce((a, l) => a + displayPrice(l), 0)
+  const stats = useBidStore((s) => s.stats)
+  const openModal = useBidStore((s) => s.openModal)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-8">
         <div>
-          <h1 className="font-display font-bold text-3xl">Seller dashboard</h1>
-          <p className="text-muted mt-1">Manage your inventory, watch activity and close auctions.</p>
+          <h1 className="font-display font-bold text-3xl text-white">Attention Analytics</h1>
+          <p className="text-sm text-neutral-400 mt-1">Live overview of product rankings, click throughput, and revenue volume.</p>
         </div>
-        <Link to="/sell" className="btn-accent">+ New listing</Link>
+        <button onClick={() => openModal()} className="btn-accent">+ Claim Spot</button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-        <Kpi label="Live slots" value={String(live.length)} />
-        <Kpi label="Ended" value={String(ended.length)} />
-        <Kpi label="Watched" value={String(watched.length)} />
-        <Kpi label="Live value" value={formatMoney(totalValue)} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Kpi label="Online Viewers" value={String(stats.onlineCount)} />
+        <Kpi label="Total Visitors" value={formatNumber(stats.totalVisitors)} />
+        <Kpi label="Total Volume" value={formatBid(stats.totalRevenue)} />
+        <Kpi label="Total Clicks" value={formatNumber(stats.totalClicks)} />
       </div>
 
-      <h2 className="font-display text-xl font-semibold mt-10 mb-3">Your live inventory</h2>
-      {live.length === 0 ? (
-        <div className="card p-10 text-center text-muted">No live slots. <Link to="/sell" className="text-accent hover:underline">List one</Link>.</div>
-      ) : (
-        <div className="space-y-3">
-          {live.map((l) => {
-            const remaining = timeRemaining(l.endsAt, Date.now())
-            return (
-              <div key={l.id} className="card p-4 flex flex-wrap items-center gap-4">
-                <div className={`h-12 w-12 rounded-lg bg-gradient-to-br ${l.gradient}`} />
-                <div className="min-w-[180px]">
-                  <Link to={`/listing/${l.id}`} className="font-display font-semibold hover:text-accent">{l.title}</Link>
-                  <p className="text-xs text-muted">{l.city} · {l.auctionType === 'reverse' ? 'Dutch' : 'Timed'}</p>
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted">Price </span>
-                  <span className="font-display font-bold">{formatMoney(displayPrice(l))}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted">Bids </span>
-                  <span className="font-display">{l.bidCount}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted">Impr/wk </span>
-                  <span>{formatImpressions(l.weeklyImpressions)}</span>
-                </div>
-                <div className="text-sm text-accent-2 ml-auto">{remaining ? `⏱ ${remaining}` : 'Ended'}</div>
-                <button onClick={() => closeEarly(l.id)} className="btn-ghost !py-1.5 text-xs">Close early</button>
+      <h2 className="font-display text-xl font-semibold mt-10 mb-3 text-white">Top 10 Attention Positions</h2>
+      <div className="space-y-3">
+        {listings.slice(0, 10).map((l) => (
+          <div key={l.id} className="p-4 rounded-xl bg-surface border border-white/[0.06] flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="w-7 text-center font-display font-extrabold text-coral-400">
+                #{l.rank}
+              </span>
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center font-display font-bold text-xs ${
+                  l.logoBg || 'bg-zinc-800 text-white'
+                }`}
+              >
+                {l.logoText || l.title.slice(0, 2).toUpperCase()}
               </div>
-            )
-          })}
-        </div>
-      )}
+              <div>
+                <Link to={`/listing/${l.id}`} className="font-display font-semibold text-white hover:text-coral-400">
+                  {l.title}
+                </Link>
+                <p className="text-xs text-neutral-400">{l.category} · {timeAgo(l.createdAt)}</p>
+              </div>
+            </div>
 
-      {ended.length > 0 && (
-        <>
-          <h2 className="font-display text-xl font-semibold mt-10 mb-3 text-muted">Ended</h2>
-          <div className="space-y-3 opacity-70">
-            {ended.map((l) => (
-              <div key={l.id} className="card p-4 flex items-center gap-4">
-                <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${l.gradient}`} />
-                <Link to={`/listing/${l.id}`} className="font-display font-semibold">{l.title}</Link>
-                <span className="text-sm text-muted ml-auto">
-                  {l.topBidder ? `Won by ${l.topBidder} at ${formatMoney(l.currentBid)}` : 'Passed in'}
-                </span>
-              </div>
-            ))}
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-amber-400 font-mono text-xs">
+                🔥 {formatClicks(l.clickCount)} clicks
+              </span>
+              <span className="font-display font-bold text-coral-500">
+                {formatBid(l.currentBid)}
+              </span>
+              <button
+                onClick={() =>
+                  openModal({
+                    targetListing: l,
+                    targetRank: l.rank,
+                    initialAmount: l.currentBid + 5,
+                  })
+                }
+                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-semibold text-neutral-300"
+              >
+                Outbid
+              </button>
+            </div>
           </div>
-        </>
-      )}
+        ))}
+      </div>
     </div>
   )
 }
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card p-4 text-center">
+    <div className="p-4 rounded-2xl bg-surface border border-white/[0.06] text-center">
       <div className="font-display text-2xl font-bold text-white">{value}</div>
-      <div className="text-xs text-muted mt-0.5">{label}</div>
+      <div className="text-xs text-neutral-400 mt-0.5">{label}</div>
     </div>
   )
 }

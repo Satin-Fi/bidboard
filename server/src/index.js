@@ -1,252 +1,436 @@
+// Bidboard Pay-to-Rank — Express API Server
 import express from 'express'
 import cors from 'cors'
-import { randomUUID } from 'node:crypto'
-import { loadDb, saveDb, findListing, allLiveListings, insertBid, bidsForListing, findUserByEmail, findUserById, insertUser, setWatch, watchedIds, insertSavedSearch, removeSavedSearch, savedSearchesForUser } from './repository.js'
+import { createHash, randomUUID } from 'node:crypto'
+import {
+  findUserByEmail, findUserById, insertUser,
+  allCategories, findCategoryBySlug, findCategoryById,
+  findListingById, findListingByUrl, getLeaderboard, insertListing,
+  updateListingBid, activateListing, recalculateRanks, estimateRankForBid,
+  insertBid, confirmBid, bidsForListing, findBidBySession,
+  insertClick, insertActivity, recentActivity,
+  insertPayment, confirmPayment, paymentsForUser, listingsForUser,
+  getGlobalStats,
+} from './repository.js'
 import { hashPassword, verifyPassword, signToken, requireAuth } from './auth.js'
-import { minNextBid, reversePrice, validateTimedBid, maybeExtend, displayPrice } from './rules.js'
 import { createHub } from './hub.js'
+import { normalizeUrl, isUrlAllowed } from './urlutils.js'
+import { runSeed } from './seed.js'
 
 const app = express()
+
 app.use(cors({ origin: (process.env.CORS_ORIGIN || '*').split(',').map((s) => s.trim()) }))
+
+// Stripe webhook needs raw body
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
 app.use(express.json())
 
-// Shared hub reference; real implementation attached in startServer().
-const hub = { broadcast() {}, listingUpdated() {}, bidPlaced() {}, auctionEnded() {}, snapshot() {} }
+// ─── Shared hub (wired in startServer) ───────────────────────────────────────
+const hub = {
+  broadcast() {}, broadcastRankUpdate() {}, broadcastActivity() {},
+  broadcastStats() {}, getConnectionCount: () => 0,
+}
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 app.post('/api/auth/register', async (req, res) => {
   const { email, name, password } = req.body || {}
   if (!email || !password) return res.status(400).json({ error: 'Email and password required.' })
-  const db = loadDb()
-  if (findUserByEmail(db, email)) return res.status(409).json({ error: 'Email already registered.' })
+  if (findUserByEmail(email)) return res.status(409).json({ error: 'Email already registered.' })
   const user = {
     id: 'u-' + randomUUID().slice(0, 8),
-    email, name: name || email.split('@')[0],
-    passwordHash: await hashPassword(password), verified: false, createdAt: Date.now(),
+    email: email.trim().toLowerCase(),
+    name: (name || email.split('@')[0]).trim(),
+    password_hash: await hashPassword(password),
   }
-  insertUser(db, user)
-  saveDb(db)
+  insertUser(user)
   res.json({ token: signToken(user), user: publicUser(user) })
 })
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body || {}
-  const db = loadDb()
-  const user = findUserByEmail(db, email || '')
-  if (!user || !(await verifyPassword(password || '', user.passwordHash)))
+  const user = findUserByEmail(email || '')
+  if (!user || !(await verifyPassword(password || '', user.password_hash)))
     return res.status(401).json({ error: 'Invalid credentials.' })
   res.json({ token: signToken(user), user: publicUser(user) })
 })
 
 function publicUser(u) {
-  return { id: u.id, email: u.email, name: u.name, verified: u.verified }
+  return { id: u.id, email: u.email, name: u.name }
 }
 
-// ---------- Listings ----------
-app.get('/api/listings', (req, res) => {
-  const db = loadDb()
-  const live = allLiveListings(db)
-  res.json(live.map(decorate(db)))
-})
-
-app.get('/api/listings/:id', (req, res) => {
-  const db = loadDb()
-  const listing = findListing(db, req.params.id)
-  if (!listing) return res.status(404).json({ error: 'Not found.' })
-  const bids = bidsForListing(db, req.params.id).slice(0, 50)
-  res.json({ listing: decorate(db)(listing), bids })
-})
-
-function decorate(db) {
-  return (l) => ({
-    ...l,
-    displayPrice: displayPrice(l),
-    watched: false, // per-user watch set on the client after auth
+// ─── Leaderboard ─────────────────────────────────────────────────────────────
+app.get('/api/leaderboard', (req, res) => {
+  const { category, sort, q, page = '1', limit = '50' } = req.query
+  const { rows, total } = getLeaderboard({
+    categorySlug: category,
+    sort,
+    q,
+    page: Math.max(1, parseInt(page)),
+    limit: Math.min(100, Math.max(1, parseInt(limit))),
   })
+  const listings = rows.map(decorateListing)
+  const pageNum = parseInt(page)
+  const limitNum = parseInt(limit)
+  res.json({
+    listings,
+    total,
+    page: pageNum,
+    totalPages: Math.ceil(total / limitNum) || 1,
+  })
+})
+
+function decorateListing(l) {
+  if (!l) return null
+  return {
+    id: l.id,
+    rank: l.rank,
+    canonicalUrl: l.canonical_url,
+    displayUrl: l.display_url,
+    title: l.title,
+    description: l.description,
+    logoUrl: l.logo_url,
+    categoryId: l.category_id,
+    categoryName: l.category_name || '',
+    categorySlug: l.category_slug || '',
+    currentBidCents: l.current_bid_cents,
+    currentBid: l.current_bid_cents / 100,
+    clickCount: l.click_count,
+    status: l.status,
+    createdAt: l.created_at,
+    updatedAt: l.updated_at,
+    ownerId: l.owner_id,
+  }
 }
 
-// ---------- Bidding ----------
-app.post('/api/listings/:id/bid', requireAuth, (req, res) => {
-  const { amount, bidder } = req.body || {}
-  const db = loadDb()
-  const listing = findListing(db, req.params.id)
-  if (!listing) return res.status(404).json({ error: 'Not found.' })
-  // a bidder name is the auth name, unless provided
-  const bidderName = bidder || req.user.name
-  if (listing.auctionType === 'timed') {
-    const v = validateTimedBid(listing, Number(amount))
-    if (!v.ok) return res.status(400).json({ error: v.error })
-    const bid = {
-      id: 'b-' + randomUUID().slice(0, 8), listingId: listing.id,
-      amount: Number(amount), bidder: bidderName, at: Date.now(),
-    }
-    insertBid(db, bid)
-    listing.currentBid = Number(amount)
-    listing.bidCount += 1
-    listing.topBidder = bidderName
-    listing.endsAt = maybeExtend(listing)
-    saveDb(db)
-    hub.bidPlaced(bid, decorate(db)(listing))
-    return res.json({ ok: true, bid, listing: decorate(db)(listing) })
+// ─── Categories ───────────────────────────────────────────────────────────────
+app.get('/api/categories', (req, res) => {
+  const cats = allCategories()
+  res.json({
+    categories: cats.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description,
+      icon: c.icon,
+      listingCount: c.listing_count || 0,
+    })),
+  })
+})
+
+// ─── Listing preview (URL fetch) ──────────────────────────────────────────────
+app.post('/api/listings/preview', async (req, res) => {
+  const { url } = req.body || {}
+  if (!url) return res.status(400).json({ error: 'URL required.' })
+
+  // Normalize + validate
+  let canonical
+  try {
+    canonical = normalizeUrl(url)
+  } catch (e) {
+    return res.status(400).json({ error: e.message })
   }
-  return res.status(400).json({ error: 'Use /accept for Dutch auctions.' })
-})
-
-// Dutch auction: accept current declining price
-app.post('/api/listings/:id/accept', requireAuth, (req, res) => {
-  const db = loadDb()
-  const listing = findListing(db, req.params.id)
-  if (!listing) return res.status(404).json({ error: 'Not found.' })
-  if (listing.status !== 'live' || listing.auctionType !== 'reverse')
-    return res.status(400).json({ error: 'Not open for acceptance.' })
-  const price = reversePrice(listing)
-  const bidderName = (req.body && req.body.bidder) || req.user.name
-  const bid = { id: 'b-' + randomUUID().slice(0, 8), listingId: listing.id, amount: price, bidder: bidderName, at: Date.now(), winning: true }
-  insertBid(db, bid)
-  listing.currentBid = price
-  listing.bidCount += 1
-  listing.topBidder = bidderName
-  listing.status = 'ended'
-  saveDb(db)
-  hub.bidPlaced(bid, decorate(db)(listing))
-  hub.auctionEnded(decorate(db)(listing))
-  return res.json({ ok: true, bid, listing: decorate(db)(listing) })
-})
-
-// Seller closes early
-app.post('/api/listings/:id/close', requireAuth, (req, res) => {
-  const db = loadDb()
-  const listing = findListing(db, req.params.id)
-  if (!listing) return res.status(404).json({ error: 'Not found.' })
-  if (listing.status !== 'live') return res.status(400).json({ error: 'Auction already ended.' })
-  listing.status = 'ended'
-  listing.endsAt = Date.now()
-  saveDb(db)
-  hub.auctionEnded(decorate(db)(listing))
-  res.json({ ok: true, listing: decorate(db)(listing) })
-})
-
-// ---------- Create listing (seller) ----------
-app.post('/api/listings', requireAuth, (req, res) => {
-  const b = req.body || {}
-  const required = ['title', 'owner', 'city', 'category', 'format', 'auctionType']
-  for (const k of required) if (!b[k]) return res.status(400).json({ error: `Missing ${k}.` })
-  if (!b.reserve || Number(b.reserve) <= 0) return res.status(400).json({ error: 'Reserve must be positive.' })
-  if (b.auctionType === 'reverse' && (!b.startPrice || Number(b.startPrice) <= Number(b.reserve)))
-    return res.status(400).json({ error: 'Dutch start price must exceed reserve.' })
-  const db = loadDb()
-  const listing = {
-    id: 'bb-' + randomUUID().slice(0, 8),
-    ownerId: req.userId, owner: b.owner, verified: !!b.verified,
-    title: b.title, city: b.city, address: b.address || b.city,
-    category: b.category, format: b.format, gradient: b.gradient || 'from-sky-500 via-cyan-500 to-emerald-400',
-    weeklyImpressions: Number(b.weeklyImpressions) || 0, viewsPerDay: Number(b.viewsPerDay) || 0,
-    reserve: Number(b.reserve), startPrice: b.startPrice ? Number(b.startPrice) : undefined,
-    declinePerHour: b.auctionType === 'reverse' ? (Number(b.declinePerHour) || 0) : undefined,
-    ratePerWeek: b.ratePerWeek ? Number(b.ratePerWeek) : undefined,
-    lat: Number(b.lat) || 39.8, lng: Number(b.lng) || -98.5,
-    description: b.description || '', endsAt: Date.now() + (Number(b.hours) || 48) * 60 * 60 * 1000,
-    createdAt: Date.now(), auctionType: b.auctionType, status: 'live',
-    currentBid: 0, bidCount: 0, topBidder: null,
-    size: b.size || '—', illumination: b.illumination || '', audience: b.audience || 'General public',
-    dayparting: !!b.dayparting,
+  if (!isUrlAllowed(canonical)) {
+    return res.status(400).json({ error: 'This URL type is not allowed on Bidboard.' })
   }
-  db.listings.unshift(listing)
-  saveDb(db)
-  hub.listingUpdated(decorate(db)(listing))
-  res.json({ ok: true, listing: decorate(db)(listing) })
+
+  // Check if already listed
+  const existing = findListingByUrl(canonical)
+
+  // Fetch metadata
+  let title = '', description = '', logoUrl = null
+  try {
+    const { fetchMetadata } = await import('./metadata.js')
+    const meta = await fetchMetadata(canonical)
+    title = meta.title || ''
+    description = meta.description || ''
+    logoUrl = meta.logoUrl || null
+  } catch {}
+
+  res.json({
+    title,
+    description,
+    logoUrl,
+    canonicalUrl: canonical,
+    existingListing: existing ? decorateListing(existing) : null,
+  })
 })
 
-// ---------- Watchlist ----------
-app.get('/api/watch', requireAuth, (req, res) => {
-  const db = loadDb()
-  res.json({ watched: watchedIds(db, req.userId) })
-})
-app.post('/api/watch', requireAuth, (req, res) => {
-  const { listingId, on } = req.body || {}
-  const db = loadDb()
-  setWatch(db, req.userId, listingId, !!on)
-  saveDb(db)
-  res.json({ ok: true, watched: watchedIds(db, req.userId) })
+// ─── Rank estimation ──────────────────────────────────────────────────────────
+app.post('/api/listings/estimate-rank', (req, res) => {
+  const { bidCents, excludeId } = req.body || {}
+  if (!bidCents || bidCents < 0) return res.status(400).json({ error: 'bidCents required.' })
+  const result = estimateRankForBid(Number(bidCents), excludeId)
+  res.json(result)
 })
 
-// ---------- Saved searches ----------
-app.get('/api/saved-searches', requireAuth, (req, res) => {
-  const db = loadDb()
-  res.json({ savedSearches: savedSearchesForUser(db, req.userId) })
+// ─── Listing detail ───────────────────────────────────────────────────────────
+app.get('/api/listings/:id', (req, res) => {
+  const listing = findListingById(req.params.id)
+  if (!listing || listing.status === 'deleted') return res.status(404).json({ error: 'Not found.' })
+  const bids = bidsForListing(req.params.id)
+  // Simple rank history from bid records
+  const rankHistory = bids
+    .filter((b) => b.new_rank)
+    .map((b) => ({ rank: b.new_rank, date: b.created_at }))
+    .reverse()
+  res.json({
+    listing: decorateListing(listing),
+    bids: bids.map((b) => ({
+      id: b.id,
+      newBidCents: b.new_bid_cents,
+      newBid: b.new_bid_cents / 100,
+      previousBidCents: b.previous_bid_cents,
+      previousBid: b.previous_bid_cents / 100,
+      amountPaidCents: b.amount_paid_cents,
+      amountPaid: b.amount_paid_cents / 100,
+      oldRank: b.old_rank,
+      newRank: b.new_rank,
+      createdAt: b.created_at,
+    })),
+    rankHistory,
+  })
 })
-app.post('/api/saved-searches', requireAuth, (req, res) => {
-  const b = req.body || {}
-  const db = loadDb()
-  const s = { id: 's-' + randomUUID().slice(0, 8), userId: req.userId, q: b.q || '', format: b.format || 'All', category: b.category || 'All' }
-  insertSavedSearch(db, s)
-  saveDb(db)
-  res.json({ ok: true, savedSearch: s })
-})
-app.delete('/api/saved-searches/:id', requireAuth, (req, res) => {
-  const db = loadDb()
-  removeSavedSearch(db, req.userId, req.params.id)
-  saveDb(db)
+
+// ─── Click tracking ───────────────────────────────────────────────────────────
+app.post('/api/listings/:id/click', (req, res) => {
+  const listing = findListingById(req.params.id)
+  if (!listing || listing.status !== 'active') return res.status(404).json({ error: 'Not found.' })
+  const ip = req.ip || req.socket?.remoteAddress || ''
+  const ua = req.get('user-agent') || ''
+  insertClick({
+    listing_id: req.params.id,
+    ip_hash: createHash('sha256').update(ip).digest('hex').slice(0, 16),
+    user_agent_hash: createHash('sha256').update(ua).digest('hex').slice(0, 16),
+    referrer: req.get('referer') || '',
+    device_type: /mobile/i.test(ua) ? 'mobile' : 'desktop',
+  })
   res.json({ ok: true })
 })
 
-// ---------- Health ----------
+// ─── Create checkout (listing + bid) ─────────────────────────────────────────
+app.post('/api/checkout', requireAuth, async (req, res) => {
+  const { url, title, description, logoUrl, categoryId, bidCents, existingListingId } = req.body || {}
+
+  if (!url || !title || !bidCents || !categoryId) {
+    return res.status(400).json({ error: 'url, title, categoryId, and bidCents are required.' })
+  }
+  if (Number(bidCents) < 500) {
+    return res.status(400).json({ error: 'Minimum bid is $5.' })
+  }
+
+  // Normalize URL
+  let canonical
+  try {
+    canonical = normalizeUrl(url)
+  } catch (e) {
+    return res.status(400).json({ error: e.message })
+  }
+
+  // Find or create listing
+  let listing = existingListingId
+    ? findListingById(existingListingId)
+    : findListingByUrl(canonical)
+
+  if (!listing) {
+    // Create new pending listing
+    listing = insertListing({
+      owner_id: req.userId,
+      canonical_url: canonical,
+      display_url: canonical.replace(/^https?:\/\/(www\.)?/, ''),
+      title: title.trim().slice(0, 80),
+      description: (description || '').trim().slice(0, 160),
+      logo_url: logoUrl || null,
+      category_id: categoryId,
+    })
+  }
+
+  const previousBid = listing.current_bid_cents || 0
+
+  // Server-side minimum bid validation
+  const minimumBid = previousBid + 100 // at least $1 more
+  if (Number(bidCents) < minimumBid && previousBid > 0) {
+    return res.status(400).json({
+      error: `Minimum bid is $${minimumBid / 100}. Someone may have just outbid you.`,
+      currentMinimum: minimumBid,
+    })
+  }
+
+  const amountPaid = previousBid > 0
+    ? Math.max(Number(bidCents) - previousBid, 100) // pay difference
+    : Number(bidCents)
+
+  // Create pending bid record
+  const bid = insertBid({
+    listing_id: listing.id,
+    user_id: req.userId,
+    previous_bid_cents: previousBid,
+    new_bid_cents: Number(bidCents),
+    amount_paid_cents: amountPaid,
+    old_rank: listing.rank,
+    stripe_session_id: null,
+  })
+
+  // Create checkout (mock or real Stripe)
+  const sessionId = 'sess_' + randomUUID().slice(0, 12)
+  const baseUrl = process.env.APP_URL || 'http://localhost:5173'
+
+  // Mock checkout URL — in production this would be Stripe Checkout session URL
+  const checkoutUrl = `${baseUrl}/payment/success?session=${sessionId}&listing=${encodeURIComponent(title)}&rank=${estimateRankForBid(Number(bidCents), listing.id).rank}&bid=${amountPaid}`
+
+  // Update bid record with session
+  const { getDb } = await import('./repository.js')
+  const db = getDb()
+  db.prepare('UPDATE bids SET stripe_session_id = ? WHERE id = ?').run(sessionId, bid.id)
+
+  // Store payment record
+  insertPayment({
+    user_id: req.userId,
+    listing_id: listing.id,
+    bid_id: bid.id,
+    stripe_session_id: sessionId,
+    amount_cents: amountPaid,
+  })
+
+  // Auto-confirm for demo/mock checkout
+  setTimeout(() => confirmPaymentAndUpdate(sessionId, listing.id, Number(bidCents), bid.id), 50)
+
+  res.json({ checkoutUrl, sessionId })
+})
+
+// ─── Stripe webhook ───────────────────────────────────────────────────────────
+app.post('/api/webhooks/stripe', async (req, res) => {
+  let event
+  try {
+    event = JSON.parse(req.body.toString())
+  } catch {
+    return res.status(400).json({ error: 'Invalid payload.' })
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object
+    const bid = findBidBySession(session.id)
+    if (bid && bid.status !== 'confirmed') {
+      await confirmPaymentAndUpdate(session.id, bid.listing_id, bid.new_bid_cents, bid.id)
+    }
+  }
+
+  res.json({ received: true })
+})
+
+async function confirmPaymentAndUpdate(sessionId, listingId, newBidCents, bidId) {
+  // Atomic: update listing bid + recalculate ranks
+  updateListingBid(null, listingId, newBidCents)
+  activateListing(listingId)
+  recalculateRanks()
+  confirmPayment(sessionId)
+
+  const updatedListing = findListingById(listingId)
+  if (!updatedListing) return
+
+  const newRank = updatedListing.rank
+  confirmBid(bidId, newRank)
+
+  // Log activity
+  const actType = newRank === 1 ? 'claimed_top' : 'rank_up'
+  const actRecord = insertActivity({
+    listing_id: listingId,
+    listing_title: updatedListing.title,
+    display_url: updatedListing.display_url,
+    type: actType,
+    bid_amount_cents: newBidCents,
+    old_rank: updatedListing.rank,
+    new_rank: newRank,
+  })
+
+  // Broadcast live updates
+  const { rows } = getLeaderboard({ limit: 100 })
+  hub.broadcastRankUpdate(rows.map(decorateListing))
+  hub.broadcastActivity({
+    id: actRecord.id,
+    type: actType,
+    listingId,
+    listingTitle: updatedListing.title,
+    displayUrl: updatedListing.display_url,
+    bidAmount: newBidCents / 100,
+    oldRank: updatedListing.rank,
+    newRank,
+    createdAt: Date.now(),
+  })
+}
+
+// ─── Activity ─────────────────────────────────────────────────────────────────
+app.get('/api/activity', (req, res) => {
+  const limit = Math.min(50, parseInt(req.query.limit || '20'))
+  const events = recentActivity(limit)
+  res.json({
+    events: events.map((e) => ({
+      id: e.id,
+      type: e.type,
+      listingId: e.listing_id,
+      listingTitle: e.listing_title,
+      displayUrl: e.display_url,
+      bidAmount: e.bid_amount_cents / 100,
+      oldRank: e.old_rank,
+      newRank: e.new_rank,
+      createdAt: e.created_at,
+    })),
+  })
+})
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+app.get('/api/stats', (req, res) => {
+  const stats = getGlobalStats()
+  stats.activeViewers = hub.getConnectionCount()
+  res.json(stats)
+})
+
+// ─── User dashboard ───────────────────────────────────────────────────────────
+app.get('/api/me/listings', requireAuth, (req, res) => {
+  const listings = listingsForUser(req.userId)
+  res.json({ listings: listings.map(decorateListing) })
+})
+
+app.get('/api/me/payments', requireAuth, (req, res) => {
+  const payments = paymentsForUser(req.userId)
+  res.json({
+    payments: payments.map((p) => ({
+      id: p.id,
+      listingId: p.listing_id,
+      listingTitle: p.listing_title,
+      amountCents: p.amount_cents,
+      amount: p.amount_cents / 100,
+      status: p.status,
+      createdAt: p.created_at,
+    })),
+  })
+})
+
+// ─── Health ───────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }))
 
-// Re-wire the hub onto the actual HTTP server (createHub earlier used port 0).
+// ─── Start ────────────────────────────────────────────────────────────────────
 export function startServer() {
   const port = Number(process.env.PORT) || 4000
   const server = app.listen(port, () => {
     console.log(`Bidboard API listening on :${port}`)
   })
+
   const realHub = createHub(server)
-  // attach hub methods to the shared `hub` reference used by routes
-  ;['broadcast', 'listingUpdated', 'bidPlaced', 'auctionEnded', 'snapshot'].forEach((k) => {
+  ;['broadcast', 'broadcastRankUpdate', 'broadcastActivity', 'broadcastStats', 'getConnectionCount'].forEach((k) => {
     hub[k] = realHub[k]
   })
-  runMarketMaker(realHub)
+
+  // Broadcast viewer count every 30s
+  setInterval(() => {
+    hub.broadcastStats({ activeViewers: hub.getConnectionCount() })
+  }, 30000)
+
   return server
 }
 
-// ---------- Market maker (simulated rival activity + clock) ----------
-const RIVALS = ['Apex Beverages', 'Coastline Realty', 'North Branch Coffee', 'Foundry Labs', 'BBQ Nation', 'Vertex Auto', 'Lumen Cosmetics', 'Harbor Sports']
-
-function runMarketMaker(h) {
-  // every 7s: maybe a rival bids on a live TIMED auction; close expired auctions
-  setInterval(() => {
-    const db = loadDb()
-    const now = Date.now()
-    let changed = false
-    for (const l of db.listings) {
-      if (l.status !== 'live') continue
-      if (now >= l.endsAt) {
-        l.status = 'ended'
-        changed = true
-        h.auctionEnded(decorate(db)(l))
-        continue
-      }
-      if (l.auctionType === 'timed' && Math.random() < 0.25) {
-        const min = minNextBid(l)
-        const bump = Math.max(100, Math.round((min * 0.08) / 100) * 100)
-        const amount = min + Math.floor(Math.random() * (bump / 100 + 1)) * 100
-        const bid = { id: 'b-' + randomUUID().slice(0, 8), listingId: l.id, amount, bidder: RIVALS[Math.floor(Math.random() * RIVALS.length)], at: now }
-        db.bids.unshift(bid)
-        l.currentBid = amount
-        l.bidCount += 1
-        l.topBidder = bid.bidder
-        changed = true
-        h.bidPlaced(bid, decorate(db)(l))
-      }
-    }
-    if (changed) saveDb(db)
-  }, 7000)
-}
-
-// Auto-seed on first run if empty
+// Auto-seed on first run
 if (process.env.AUTO_SEED !== 'false') {
-  const db = loadDb()
-  if (db.listings.length === 0) {
-    import('./seed.js').then(() => console.log('Auto-seeded repository.')).catch(() => {})
-  }
+  runSeed().catch(console.error)
 }
 
 if (process.argv[1] && process.argv[1].endsWith('index.js')) {

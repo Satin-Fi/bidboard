@@ -1,4 +1,4 @@
-// WebSocket hub: broadcasts auction events to all connected clients.
+// WebSocket hub: broadcasts rank updates and activity to all clients
 import { WebSocketServer } from 'ws'
 
 export function createHub(server) {
@@ -8,22 +8,29 @@ export function createHub(server) {
   wss.on('connection', (ws) => {
     clients.add(ws)
     ws.on('close', () => clients.delete(ws))
+    ws.on('error', () => clients.delete(ws))
   })
 
-  function broadcast(type, payload) {
+  function send(type, payload) {
     const msg = JSON.stringify({ type, payload })
     for (const ws of clients) {
-      if (ws.readyState === ws.OPEN) ws.send(msg)
+      if (ws.readyState === ws.OPEN) {
+        try { ws.send(msg) } catch {}
+      }
     }
   }
 
   return {
     wss,
-    broadcast,
-    /** initial snapshot for a freshly-connected client */
-    snapshot: (data) => broadcast('snapshot', data),
-    listingUpdated: (listing) => broadcast('listing.updated', listing),
-    bidPlaced: (bid, listing) => broadcast('bid.placed', { bid, listing }),
-    auctionEnded: (listing) => broadcast('auction.ended', listing),
+    broadcast: send,
+    broadcastRankUpdate: (listings) => send('rank_update', { listings }),
+    broadcastActivity: (event) => send('activity', event),
+    broadcastStats: (stats) => send('stats_update', stats),
+    getConnectionCount: () => clients.size,
+    // Legacy compat
+    listingUpdated: (l) => send('listing.updated', l),
+    bidPlaced: (bid, listing) => send('bid.placed', { bid, listing }),
+    auctionEnded: (listing) => send('auction.ended', listing),
+    snapshot: (data) => send('snapshot', data),
   }
 }
