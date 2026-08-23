@@ -1,4 +1,4 @@
-﻿import { getAllListings, getDbActivities, getDbStats } from './lib/db'
+﻿import { getAllListings, getDbActivities, getDbStats } from './_db.js'
 
 export default async function handler(req: any, res: any) {
   const { category, q } = req.query || {}

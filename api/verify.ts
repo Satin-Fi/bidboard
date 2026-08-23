@@ -1,4 +1,4 @@
-﻿import { recordVerifiedPaymentAndRank } from './lib/db'
+﻿import { recordVerifiedPaymentAndRank } from './_db.js'
 
 export default async function handler(req: any, res: any) {
   const sessionId = (req.query?.session_id || req.body?.session_id) as string
