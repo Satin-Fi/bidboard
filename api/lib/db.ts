@@ -1,5 +1,6 @@
-﻿import fs from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 
 export interface DbListing {
   id: string
@@ -53,7 +54,7 @@ interface DatabaseSchema {
   }
 }
 
-const DB_FILE = path.join(process.cwd(), '.db_store.json')
+const DB_FILE = path.join(os.tmpdir(), 'bidboard_store.json')
 
 // In-memory cache
 let memDb: DatabaseSchema | null = null
