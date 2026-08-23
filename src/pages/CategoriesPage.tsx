@@ -3,6 +3,7 @@ import { CATEGORIES_LIST } from '../types'
 import { useBidStore } from '../store/useBidStore'
 import { formatBid } from '../lib/format'
 import { CategoryIcon } from '../components/CategoryIcon'
+import { ArrowUpRight, Plus } from 'lucide-react'
 
 export default function CategoriesPage() {
   const listings = useBidStore((s) => s.listings)
@@ -15,7 +16,7 @@ export default function CategoriesPage() {
         <span className="text-xs font-mono font-bold uppercase tracking-wider text-coral-400">
           Directory
         </span>
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-white mt-1">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-white mt-1 tracking-tight">
           Explore by Category
         </h1>
         <p className="text-sm text-neutral-400 mt-2 max-w-md mx-auto">
@@ -31,14 +32,14 @@ export default function CategoriesPage() {
           return (
             <div
               key={cat.slug}
-              className="p-5 rounded-2xl bg-surface border border-white/[0.06] hover:border-white/[0.15] hover:bg-surface-2 transition-all flex flex-col justify-between group"
+              className="p-5 rounded-2xl bg-surface border border-white/[0.06] hover:border-white/[0.14] hover:bg-surface-2 transition-all duration-150 flex flex-col justify-between group shadow-sm"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center text-coral-400">
+                  <div className="w-8 h-8 rounded-xl bg-surface-2 border border-white/[0.08] flex items-center justify-center text-coral-400 group-hover:scale-105 transition-transform">
                     <CategoryIcon name={cat.slug} className="w-4 h-4" />
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/[0.05] text-xs font-mono font-semibold text-neutral-400">
+                  <span className="px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-xs font-mono font-semibold text-neutral-400">
                     {categoryListings.length} spots
                   </span>
                 </div>
@@ -48,8 +49,8 @@ export default function CategoriesPage() {
                 </h3>
 
                 {topProduct ? (
-                  <p className="text-xs text-neutral-400 mt-2 line-clamp-2">
-                    #1 in category: <span className="text-white font-medium">{topProduct.title}</span> ({formatBid(topProduct.currentBid)})
+                  <p className="text-xs text-neutral-400 mt-2 line-clamp-2 leading-relaxed">
+                    #1: <span className="text-white font-medium">{topProduct.title}</span> ({formatBid(topProduct.currentBid)})
                   </p>
                 ) : (
                   <p className="text-xs text-neutral-500 mt-2">
@@ -58,19 +59,20 @@ export default function CategoriesPage() {
                 )}
               </div>
 
-              <div className="mt-4 pt-3 border-t border-white/[0.05] flex items-center justify-between">
+              <div className="mt-5 pt-3 border-t border-white/[0.05] flex items-center justify-between text-xs">
                 <Link
                   to="/"
                   onClick={() => setCategory(cat.slug)}
-                  className="text-xs font-semibold text-coral-400 hover:underline"
+                  className="font-semibold text-coral-400 hover:text-coral-300 inline-flex items-center gap-0.5"
                 >
-                  View leaderboard →
+                  View board <ArrowUpRight className="w-3 h-3" />
                 </Link>
                 <button
                   onClick={() => openModal({ categorySlug: cat.slug, initialAmount: 1 })}
-                  className="text-[11px] font-medium text-neutral-400 hover:text-white"
+                  className="font-medium text-neutral-400 hover:text-white inline-flex items-center gap-1 transition-colors"
                 >
-                  + Add product ($1)
+                  <Plus className="w-3 h-3" />
+                  Rank ($1)
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { useBidStore } from '../store/useBidStore'
+import { Sparkles } from 'lucide-react'
 
 export default function RulesPage() {
   const openModal = useBidStore((s) => s.openModal)
@@ -52,7 +53,7 @@ export default function RulesPage() {
         <span className="text-xs font-mono font-bold uppercase tracking-wider text-coral-400">
           Transparency & Mechanics
         </span>
-        <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white mt-1">
+        <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white mt-1 tracking-tight">
           Rules of the Board
         </h1>
         <p className="text-sm text-neutral-400 mt-2">
@@ -60,9 +61,9 @@ export default function RulesPage() {
         </p>
       </div>
 
-      <div className="space-y-4 mb-12">
+      <div className="space-y-3.5 mb-12">
         {rules.map((r, i) => (
-          <div key={i} className="p-5 sm:p-6 rounded-2xl bg-surface border border-white/[0.06]">
+          <div key={i} className="p-5 sm:p-6 rounded-2xl bg-surface border border-white/[0.06] shadow-sm">
             <h3 className="font-display font-bold text-base sm:text-lg text-white mb-1.5">
               {r.title}
             </h3>
@@ -74,12 +75,12 @@ export default function RulesPage() {
       </div>
 
       <div className="border-t border-white/[0.08] pt-10">
-        <h2 className="font-display font-bold text-2xl text-white mb-6 text-center">
+        <h2 className="font-display font-bold text-2xl text-white mb-6 text-center tracking-tight">
           Frequently Asked Questions
         </h2>
         <div className="space-y-3">
           {faqs.map((f, i) => (
-            <div key={i} className="p-4 rounded-xl bg-surface/50 border border-white/[0.05]">
+            <div key={i} className="p-4.5 rounded-xl bg-surface-2 border border-white/[0.06] shadow-sm">
               <div className="font-display font-semibold text-sm text-white">{f.q}</div>
               <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">{f.a}</p>
             </div>
@@ -90,8 +91,9 @@ export default function RulesPage() {
       <div className="mt-12 text-center">
         <button
           onClick={() => openModal({ initialAmount: 1 })}
-          className="btn-accent !px-8 !py-3 !text-sm font-bold"
+          className="btn-accent !px-8 !py-3 !text-sm font-bold !rounded-xl"
         >
+          <Sparkles className="w-4 h-4" />
           Claim Your Spot for $1 →
         </button>
       </div>

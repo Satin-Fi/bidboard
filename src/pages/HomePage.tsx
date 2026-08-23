@@ -6,6 +6,7 @@ import LeaderboardPodium from '../components/LeaderboardPodium'
 import ActivityTicker from '../components/ActivityTicker'
 import LeaderboardRow from '../components/LeaderboardRow'
 import { CategoryIcon, Search, Flame } from '../components/CategoryIcon'
+import { RotateCw, Plus } from 'lucide-react'
 
 export default function HomePage() {
   const listings = useBidStore((s) => s.listings)
@@ -58,7 +59,7 @@ export default function HomePage() {
                     setCategory(cat.slug)
                     setPage(1)
                   }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
                     isActive
                       ? 'bg-coral-500 text-white shadow-md shadow-coral-500/20'
                       : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
@@ -75,8 +76,8 @@ export default function HomePage() {
             })}
           </div>
 
-          <div className="relative w-full sm:w-48 flex-shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-3.5 h-3.5" />
+          <div className="relative w-full sm:w-52 flex-shrink-0">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 w-3.5 h-3.5" />
             <input
               type="text"
               placeholder="Search spots..."
@@ -85,7 +86,7 @@ export default function HomePage() {
                 setSearch(e.target.value)
                 setPage(1)
               }}
-              className="w-full bg-surface border border-white/10 rounded-full pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-coral-500/60 transition-colors"
+              className="w-full bg-surface border border-white/10 rounded-full pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-coral-500/60 transition-colors"
             />
           </div>
         </div>
@@ -110,7 +111,7 @@ export default function HomePage() {
                 {showTop10Divider && (
                   <div className="my-5 flex items-center justify-center gap-3">
                     <div className="h-px bg-white/10 flex-1" />
-                    <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
+                    <span className="px-3 py-1 rounded-full bg-surface-2 border border-white/10 text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
                       TOP 10
                     </span>
                     <div className="h-px bg-white/10 flex-1" />
@@ -120,7 +121,7 @@ export default function HomePage() {
                 {showTop50Divider && (
                   <div className="my-5 flex items-center justify-center gap-3">
                     <div className="h-px bg-white/10 flex-1" />
-                    <span className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
+                    <span className="px-3 py-1 rounded-full bg-surface-2 border border-white/10 text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
                       TOP 50
                     </span>
                     <div className="h-px bg-white/10 flex-1" />
@@ -135,12 +136,13 @@ export default function HomePage() {
       ) : (
         top3.length === 0 && (
           <div className="text-center py-16 rounded-2xl bg-surface border border-white/[0.06] my-8">
-            <p className="text-neutral-400 text-sm">No products found in this category.</p>
+            <p className="text-neutral-400 text-sm">No listings found in this category.</p>
             <button
               onClick={() => openModal({ categorySlug: activeCategory })}
               className="btn-accent !mt-4 !py-2 !px-5 text-xs font-bold"
             >
-              + Be the first to claim #1 for $1
+              <Plus className="w-3.5 h-3.5" />
+              Be the first to claim #1 for $1
             </button>
           </div>
         )
@@ -152,7 +154,7 @@ export default function HomePage() {
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="w-7 h-7 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-30 flex items-center justify-center border border-white/10"
+            className="w-7 h-7 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-30 flex items-center justify-center border border-white/10 transition-colors"
           >
             ‹
           </button>
@@ -169,31 +171,32 @@ export default function HomePage() {
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="w-7 h-7 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-30 flex items-center justify-center border border-white/10"
+            className="w-7 h-7 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-30 flex items-center justify-center border border-white/10 transition-colors"
           >
             ›
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <span>
-            1 - {Math.min(filteredListings.length, pageSize)} of {filteredListings.length}
+          <span className="font-mono text-neutral-400">
+            1 - {Math.min(filteredListings.length, pageSize)} of {filteredListings.length} spots
           </span>
           <button
             onClick={() => window.location.reload()}
-            className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-neutral-300 flex items-center gap-1 text-[11px]"
+            className="px-2.5 py-1 rounded-lg bg-surface hover:bg-surface-2 border border-white/10 text-neutral-300 flex items-center gap-1 text-[11px] transition-colors"
           >
-            ↻ Refresh
+            <RotateCw className="w-3 h-3 text-neutral-400" />
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* ── Bottom Community Stats Card ────────────────────── */}
-      <section className="mt-14 p-8 sm:p-12 rounded-3xl bg-[#13151c] border border-white/[0.08] text-center relative overflow-hidden shadow-2xl">
+      {/* ── Bottom Attention Callout ────────────────────────── */}
+      <section className="mt-14 p-8 sm:p-12 rounded-3xl bg-surface border border-white/[0.08] text-center relative overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-b from-coral-500/5 via-transparent to-transparent pointer-events-none" />
 
         <p className="text-xs sm:text-sm text-neutral-400 font-medium">
-          A <span className="text-coral-400 font-semibold underline underline-offset-4">public attention market</span> where
+          A <span className="text-coral-400 font-semibold underline underline-offset-4">public attention marketplace</span> where
         </p>
 
         <div className="my-3 font-display font-black text-4xl sm:text-6xl text-coral-500 tracking-tight select-all drop-shadow-sm">
@@ -201,7 +204,7 @@ export default function HomePage() {
         </div>
 
         <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
-          Anyone can start ranking from $1. Outbid the competition to climb and claim your position.
+          Anyone can start ranking from $1. Outbid existing positions to climb to the top of the leaderboard.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
