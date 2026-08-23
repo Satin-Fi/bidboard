@@ -2,74 +2,75 @@
 
 **The auction house for outdoor advertising.** Bidboard is a live marketplace
 where media owners list billboard / outdoor ad slots and advertisers bid on them
-in real time — built to be a better, more complete take on the reverse-auction
-billboard marketplaces out there.
+in real time — a complete, full-stack take on the reverse-auction billboard
+marketplace.
 
-## Stack
+## Architecture
 
-- **Vite + React + TypeScript**
-- **React Router** — `/` (browse), `/listing/:id` (bid), `/sell` (list), `/dashboard` (seller)
-- **Tailwind CSS** — dark "night-billboard" theme
-- **Zustand** (with `persist`) — bidding store, watchlist, saved searches, sort; persisted to `localStorage`
+```
+┌─────────────────────────┐         REST + WebSocket          ┌──────────────────────────┐
+│  Bidboard SPA (Vercel)   │  ───────────────────────────────▶ │  Bidboard API (Render)    │
+│  Vite + React + TS       │  /api/*  +  /ws (live bids)        │  Node + Express + ws      │
+│  Zustand + Tailwind      │  ◀─────────────────────────────── │  JWT auth · market-maker  │
+└─────────────────────────┘                                    └────────────┬───────────────┘
+                                                                         │ JSON repo (Postgres-ready)
+                                                                         ▼
+                                                              data/db.json  (swap for Supabase/PG)
+```
+
+- **Frontend** (`/`): Vite + React + TS, React Router, Tailwind, Zustand, JWT
+  in `localStorage`, live updates over WebSocket, SVG map view (no external map
+  dependency).
+- **Backend** (`/server`): Node + Express + `ws`, JWT auth (bcrypt), a
+  JSON-file repository whose interface mirrors a SQL repo (drop-in Postgres
+  swap), a market-maker bot that places rival bids and closes expired auctions,
+  and a WebSocket hub broadcasting every event to all clients.
 
 ## Features
 
-**Two auction types**
-- **Timed (English)** — outbid rivals; min-bid validation; **anti-snipe** extends the
-  clock 3 minutes on any bid in the final 3 minutes.
-- **Dutch (reverse)** — price starts high and drops on a schedule until a buyer
-  accepts and wins instantly at the current price.
+- **Two auction types** — Timed (English, with anti-snipe) and Dutch (reverse,
+  declining price until accepted).
+- **Auth** — register/login, JWT, demo owner + buyer accounts.
+- **Realtime** — bids, accepts and auction ends stream over WebSocket; the grid
+  and detail pages update live with no refresh.
+- **Buyer tools** — category + format + city filters, CPM sort, watchlist (★),
+  saved searches, simulated rival activity.
+- **Seller** — dashboard (KPIs, live inventory, close-early), create listings
+  (both auction types, geo, specs), login-gated publishing.
+- **Map view** — live slots plotted on a US map via lat/lng.
+- **Polish** — how-it-works + trust sections, toasts, Open Graph meta.
 
-**Buyer tools**
-- Live grid with per-card countdowns, auction-type badges (Timed / Dutch),
-  filter by **category** + format + city search, sort by ending / newest /
-  highest-bid / impressions / **best CPM**.
-- **Watchlist (★)** with watched-only filter and toasts on watched-slot activity.
-- **Saved searches** — pin a filter combo and re-apply it in one click.
-- **Simulated rival bidding** keeps timed auctions feeling live.
-
-**Listing richness**
-- Geo coordinates + map-style pin, weekly impressions, **views/day**, reserve,
-  rate/week, **live CPM**, size, illumination, audience, dayparting, verified
-  badge.
-
-**Seller dashboard**
-- KPIs (live / ended / watched / live value), live inventory table, close-early.
-
-**Polish**
-- How-it-works + trust sections, toasts, Open Graph / Twitter meta, persistence.
-
-## Run it
+## Run locally
 
 ```bash
-npm install
-npm run dev      # local dev server
-npm run build    # type-check + production build -> dist/
-npm run preview  # serve the production build
-npm run test     # headless store logic tests (vite-node)
+# terminal 1 — backend (auto-seeds)
+cd server && npm install && npm start          # :4000
+
+# terminal 2 — frontend (dev proxy forwards /api + /ws to :4000)
+npm install && npm run dev                       # :5173
 ```
 
-## Structure
+Open http://localhost:5173. Demo logins: `owner@bidboard.app` / `buyer@bidboard.app`
+(password `password123`).
 
-```
-src/
-  components/   Layout, ListingCard, ToastViewport
-  data/seed.ts  Demo inventory (7 slots, both auction types, enriched specs)
-  lib/format.ts Money / impressions / countdown / relative-time / CPM helpers
-  pages/        HomePage, ListingPage, SellPage, DashboardPage
-  store/        useBidStore (bid logic) + useUiStore (toasts, watched filter)
-  types.ts      Listing / Bid domain types
-scripts/        store.test.mjs (headless logic tests)
+## Build & test
+
+```bash
+npm run build      # type-check + production build -> dist/
+npm test           # vitest: auction rules unit tests
+cd server && npm test   # live REST + WS backend integration test (spins a real server)
 ```
 
-## Roadmap (when you take it live)
+## Deploy
 
-- Replace client-side store + `localStorage` with a real backend (Supabase /
-  Postgres) and auth.
-- Real-time bid pushes (WebSocket / Supabase Realtime) replacing the simulated
-  rival engine.
-- Owner verification flow, payments, and automated auction-close + invoicing.
-- Map view (Leaflet) using the geo coordinates already stored per listing.
+- **Frontend → Vercel**: `vercel.json` builds `dist/` and SPA-rewrites all
+  routes. Set `VITE_API_URL` / `VITE_WS_URL` to the backend, or rely on the
+  same-origin proxy.
+- **Backend → Render**: `render.yaml` + `server/Procfile` run `npm start` on the
+  free tier. Set `CORS_ORIGIN` to your Vercel domain and `JWT_SECRET`.
 
-Deploy: static build on **Vercel** — `vite build` output in `dist/` is the
-artifact; SPA rewrite is handled by Vercel's default SPA fallback.
+## Roadmap
+
+- Swap the JSON repo for Postgres/Supabase (interface already matches).
+- Payments + automated invoice on auction close.
+- Owner verification flow; richer analytics.

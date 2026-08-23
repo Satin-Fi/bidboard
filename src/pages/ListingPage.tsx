@@ -2,25 +2,23 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
 import { useUiStore } from '../store/useUiStore'
+import { placeBid, acceptReverse, closeEarly, toggleWatch, loadListingDetail } from '../store/marketActions'
+import { displayPrice } from '../lib/rules'
 import { formatImpressions, formatMoney, timeRemaining, formatCpm } from '../lib/format'
 
 export default function ListingPage() {
   const { id } = useParams<{ id: string }>()
   const listing = useBidStore((s) => s.listings.find((l) => l.id === id))
-  const bids = useBidStore((s) => s.bids.filter((b) => b.listingId === id))
-  const placeBid = useBidStore((s) => s.placeBid)
-  const acceptReverse = useBidStore((s) => s.acceptReverse)
-  const closeEarly = useBidStore((s) => s.closeEarly)
+  const bids = useBidStore((s) => s.bids[id || ''] || [])
   const watched = useBidStore((s) => (id ? s.watched.includes(id) : false))
-  const toggleWatch = useBidStore((s) => s.toggleWatch)
-  const displayPrice = useBidStore((s) => s.displayPrice)
   const push = useUiStore((s) => s.push)
 
   const [, force] = useState(0)
   useEffect(() => {
     const t = setInterval(() => force((n) => n + 1), 1000)
+    if (id) loadListingDetail(id)
     return () => clearInterval(t)
-  }, [])
+  }, [id])
 
   const [amount, setAmount] = useState('')
   const [bidder, setBidder] = useState('')
@@ -43,15 +41,12 @@ export default function ListingPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const amt = Number(amount)
-    const res = placeBid(listing.id, amt, bidder.trim() || 'Anonymous')
-    if (res.ok) { push(`Bid placed at ${formatMoney(amt)}.`, 'ok'); setAmount('') }
-    else push(res.error ?? 'Bid failed.', 'warn')
+    placeBid(listing.id, amt, bidder.trim() || 'Anonymous')
+    setAmount('')
   }
 
   const accept = () => {
-    const res = acceptReverse(listing.id, bidder.trim() || 'Anonymous')
-    if (res.ok) push(`Secured at ${formatMoney(price)} — auction closed.`, 'ok')
-    else push(res.error ?? 'Could not accept.', 'warn')
+    acceptReverse(listing.id, bidder.trim() || 'Anonymous')
   }
 
   return (
@@ -80,7 +75,7 @@ export default function ListingPage() {
                 {listing.city} · owned by {listing.owner} {listing.verified && <span className="text-accent-2" title="Verified">✓ verified</span>}
               </p>
             </div>
-            <button onClick={() => { if (!listing.id) return; toggleWatch(listing.id); push(watched ? 'Removed from watchlist.' : 'Added to watchlist ★', 'info') }}
+            <button onClick={() => { toggleWatch(listing.id, !watched); push(watched ? 'Removed from watchlist.' : 'Added to watchlist ★', 'info') }}
               className={'btn-ghost shrink-0 ' + (watched ? '!text-accent-2' : '')}>
               {watched ? '★ Watching' : '☆ Watch'}
             </button>

@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useBidStore } from '../store/useBidStore'
-import { useUiStore } from '../store/useUiStore'
+import { useAuthStore } from '../store/useAuthStore'
+import { createListing } from '../store/marketActions'
 import { FORMATS, CATEGORIES, type ListingFormat, type Category, type AuctionType } from '../types'
 
 const GRADIENTS = [
@@ -14,9 +14,8 @@ const GRADIENTS = [
 ]
 
 export default function SellPage() {
-  const createListing = useBidStore((s) => s.createListing)
-  const push = useUiStore((s) => s.push)
   const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
 
   const [title, setTitle] = useState('')
   const [owner, setOwner] = useState('')
@@ -43,10 +42,10 @@ export default function SellPage() {
   const [dayparting, setDayparting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !city.trim() || !owner.trim()) {
-      setError('Title, owner and city are required.')
+    if (!title.trim() || !city.trim()) {
+      setError('Title and city are required.')
       return
     }
     const res = Number(reserve)
@@ -55,8 +54,8 @@ export default function SellPage() {
     if (!res || res <= 0) { setError('Reserve price must be a positive number.'); return }
     if (auctionType === 'reverse' && (!start || start <= res)) { setError('For Dutch auctions, start price must exceed the reserve.'); return }
 
-    const id = createListing({
-      owner: owner.trim(), title: title.trim(), city: city.trim(),
+    const id = await createListing({
+      owner: (owner.trim() || user?.name || 'Anonymous'), title: title.trim(), city: city.trim(),
       address: address.trim() || city.trim(),
       category, format, auctionType,
       weeklyImpressions: Number(impressions) > 0 ? Number(impressions) : 0,
@@ -65,18 +64,26 @@ export default function SellPage() {
       startPrice: start,
       declinePerHour: auctionType === 'reverse' ? (Number(declinePerHour) > 0 ? Number(declinePerHour) : 0) : undefined,
       ratePerWeek: Number(ratePerWeek) > 0 ? Number(ratePerWeek) : undefined,
-      endsAt: Date.now() + (dur > 0 ? dur : 48) * 60 * 60 * 1000,
       lat: Number(lat) || 39.8, lng: Number(lng) || -98.5,
+      hours: dur,
       gradient, description: description.trim() || 'No description provided.',
       verified, size: size.trim() || '—', illumination,
       audience: audience.trim() || 'General public', dayparting,
     })
-    push('Slot published to the open auction.', 'ok')
-    navigate(`/listing/${id}`)
+    if (id) navigate(`/listing/${id.id}`)
   }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      {!user ? (
+        <div className="card p-10 text-center">
+          <h1 className="font-display font-bold text-2xl">Sign in to list a slot</h1>
+          <p className="text-muted mt-2">You need an account to publish inventory.</p>
+          <Link to="/login" className="btn-accent mt-4 inline-flex">Login / Register</Link>
+        </div>
+      ) : (
+      <>
+
       <h1 className="font-display font-bold text-3xl">List a billboard slot</h1>
       <p className="text-muted mt-2">Put your outdoor inventory in front of live bidders. Listings go straight to the open auction.</p>
 
@@ -146,6 +153,8 @@ export default function SellPage() {
           <Link to="/" className="btn-ghost">Cancel</Link>
         </div>
       </form>
+      </>
+      )}
     </div>
   )
 }

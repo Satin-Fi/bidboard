@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
+import { closeEarly } from '../store/marketActions'
+import { displayPrice } from '../lib/rules'
 import { formatMoney, formatImpressions, timeRemaining } from '../lib/format'
 
 export default function DashboardPage() {
   const listings = useBidStore((s) => s.listings)
   const watched = useBidStore((s) => s.watched)
-  const displayPrice = useBidStore((s) => s.displayPrice)
-  const closeEarly = useBidStore((s) => s.closeEarly)
 
   const mine = listings // in a real app this filters by the logged-in owner; demo shows all
   const live = mine.filter((l) => l.status === 'live')

@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useBidStore, type SortKey } from '../store/useBidStore'
 import { useUiStore } from '../store/useUiStore'
+import { saveSearch, deleteSearch } from '../store/marketActions'
 import ListingCard from '../components/ListingCard'
 import { FORMATS, CATEGORIES, type ListingFormat, type Category } from '../types'
 import { formatImpressions, cpm } from '../lib/format'
+import { displayPrice } from '../lib/rules'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'ending', label: 'Ending soon' },
@@ -21,38 +23,12 @@ export default function HomePage() {
   const setWatchedOnly = useUiStore((s) => s.setWatchedOnly)
   const sort = useBidStore((s) => s.sort)
   const setSort = useBidStore((s) => s.setSort)
-  const rivalBid = useBidStore((s) => s.rivalBid)
-  const tick = useBidStore((s) => s.tick)
   const push = useUiStore((s) => s.push)
-  const displayPrice = useBidStore((s) => s.displayPrice)
   const savedSearches = useBidStore((s) => s.savedSearches)
-  const saveSearch = useBidStore((s) => s.saveSearch)
-  const removeSearch = useBidStore((s) => s.removeSearch)
 
   const [format, setFormat] = useState<ListingFormat | 'All'>('All')
   const [category, setCategory] = useState<Category | 'All'>('All')
   const [q, setQ] = useState('')
-
-  useEffect(() => {
-    const t = setInterval(tick, 1000)
-    return () => clearInterval(t)
-  }, [tick])
-
-  // simulated marketplace: rivals bump a random live TIMED auction every ~7s
-  useEffect(() => {
-    const t = setInterval(() => {
-      const live = useBidStore.getState().listings.filter((l) => l.status === 'live' && l.auctionType === 'timed')
-      if (live.length === 0) return
-      const target = live[Math.floor(Math.random() * live.length)]
-      const before = target.currentBid
-      rivalBid(target.id)
-      const after = useBidStore.getState().listings.find((l) => l.id === target.id)!
-      if (after.currentBid > before && useBidStore.getState().watched.includes(target.id)) {
-        push(`New bid on ${target.title}: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(after.currentBid)}`, 'info')
-      }
-    }, 7000)
-    return () => clearInterval(t)
-  }, [rivalBid, push])
 
   const live = listings.filter((l) => l.status === 'live')
   const ended = listings.filter((l) => l.status === 'ended')
@@ -88,7 +64,7 @@ export default function HomePage() {
       push('Set a filter before saving a search.', 'warn')
       return
     }
-    saveSearch({ q, format, category })
+    saveSearch(q, format, category)
     push('Search saved.', 'ok')
   }
 
@@ -172,9 +148,9 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <span className="text-xs text-muted">Saved:</span>
             {savedSearches.map((s) => (
-              <button key={s.id} onClick={() => { setQ(s.q); setFormat(s.format); setCategory(s.category) }}
+              <button key={s.id} onClick={() => { setQ(s.q); setFormat(s.format as ListingFormat | 'All'); setCategory(s.category as Category | 'All') }}
                 className="chip hover:bg-white/10" title="Click to apply, double-click ✕ to delete">
-                <span onClick={(e) => { e.stopPropagation(); removeSearch(s.id) }}>{s.q || s.category || s.format} ✕</span>
+                <span onClick={(e) => { e.stopPropagation(); deleteSearch(s.id) }}>{s.q || s.category || s.format} ✕</span>
               </button>
             ))}
           </div>
