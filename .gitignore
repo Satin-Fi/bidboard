@@ -8,3 +8,6 @@ server/data
 !.env.example
 .DS_Store
 .vite
+.vercel
+*.pdf
+prompt_*.txt
