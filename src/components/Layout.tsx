@@ -20,15 +20,13 @@ export default function Layout() {
       {/* ── Top Header Bar ───────────────────────────────────────── */}
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-bg/90 backdrop-blur-md">
         <div className="mx-auto max-w-4xl px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            {/* Direct Favicon Vector Brand Icon */}
-            <img
-              src="/favicon.svg"
-              alt="Bidboard Logo"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-sm group-hover:scale-105 transition-transform"
-            />
-            <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-coral-400 transition-colors">
-              Bidboard<span className="text-coral-500 font-normal">.app</span>
+          {/* Exact Logo from first commit 9a59854 */}
+          <Link to="/" className="flex items-center gap-2 group">
+            <span className="grid place-items-center h-8 w-8 rounded-lg bg-coral-500 font-display font-bold text-[#0B0F1A] text-lg shadow-sm group-hover:scale-105 transition-transform select-none">
+              B
+            </span>
+            <span className="font-display font-bold text-lg tracking-tight text-white group-hover:text-coral-400 transition-colors">
+              Bid<span className="text-coral-500">board</span>
             </span>
           </Link>
 
