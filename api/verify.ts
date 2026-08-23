@@ -1,4 +1,4 @@
-﻿import { recordVerifiedPaymentAndRank } from './_db.js'
+import { recordVerifiedPaymentAndRank } from './_db.js'
 
 export default async function handler(req: any, res: any) {
   const sessionId = (req.query?.session_id || req.body?.session_id) as string
@@ -8,8 +8,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const polarToken = process.env.POLAR_ACCESS_TOKEN || 'polar_oat_RnrOdhcKt4GMXOU8lOHRxRUli8J21S0Y2oFxt3EQibq'
-  const isSandbox = polarToken.includes('sandbox') || polarToken.startsWith('polar_oat_') || process.env.POLAR_API_URL?.includes('sandbox')
-  const polarBaseUrl = isSandbox ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1'
+  const polarBaseUrl = process.env.POLAR_API_URL || 'https://sandbox-api.polar.sh/v1'
 
   try {
     // 1. Fetch checkout session directly from Polar API

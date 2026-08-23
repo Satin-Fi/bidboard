@@ -29,8 +29,7 @@ export default async function handler(req: any, res: any) {
 
     const polarToken = process.env.POLAR_ACCESS_TOKEN || 'polar_oat_RnrOdhcKt4GMXOU8lOHRxRUli8J21S0Y2oFxt3EQibq'
     const polarProductId = process.env.POLAR_PRODUCT_ID || 'd567eea3-5fb2-47c6-b9af-1839205e9eb8'
-    const isSandbox = polarToken.includes('sandbox') || polarToken.startsWith('polar_oat_') || process.env.POLAR_API_URL?.includes('sandbox')
-    const polarBaseUrl = isSandbox ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1'
+    const polarBaseUrl = process.env.POLAR_API_URL || 'https://sandbox-api.polar.sh/v1'
 
     const origin = req.headers.origin || req.headers.referer || 'https://bidboard-eight.vercel.app'
     const cleanOrigin = origin.replace(/\/$/, '')
