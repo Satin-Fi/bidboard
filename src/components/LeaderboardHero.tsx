@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
 import { formatBid } from '../lib/format'
-import CategorySelect from './CategorySelect'
 import { Globe, Plus, Minus, ArrowUpRight } from 'lucide-react'
 
 export default function LeaderboardHero() {
@@ -14,14 +13,12 @@ export default function LeaderboardHero() {
   const defaultClaimPrice = top1 ? top1Price + 1 : 1
   const [claimPrice, setClaimPrice] = useState(defaultClaimPrice)
   const [inputUrl, setInputUrl] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
 
   const handleQuickSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     openModal({
       initialUrl: inputUrl,
       initialAmount: Math.max(1, claimPrice),
-      categorySlug: selectedCategory,
     })
   }
 
@@ -80,10 +77,10 @@ export default function LeaderboardHero() {
         <span className="text-coral-400 font-semibold">New spots start at $1.</span> Paying less than the #1 price still puts you on the board at whatever place that bid can take.
       </p>
 
-      {/* ── Main Input Bar ───────────────────────────────────────── */}
-      <form onSubmit={handleQuickSubmit} className="mt-6 max-w-2xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 rounded-2xl bg-surface border border-white/[0.08] shadow-card-subtle transition-colors">
-          <div className="relative flex-1 w-full">
+      {/* ── Main Clean Input Bar ─────────────────────────────────── */}
+      <form onSubmit={handleQuickSubmit} className="mt-6 max-w-xl mx-auto">
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface border border-white/[0.08] shadow-card-subtle focus-within:border-coral-500/50 transition-all">
+          <div className="relative flex-1">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
               <Globe className="w-4 h-4" />
             </span>
@@ -92,26 +89,16 @@ export default function LeaderboardHero() {
               placeholder="Your product URL or @handle"
               value={inputUrl}
               onChange={(e) => setInputUrl(e.target.value)}
-              className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-neutral-500 outline-none"
+              className="w-full bg-transparent pl-10 pr-3 py-2.5 text-sm text-white placeholder:text-neutral-500 outline-none"
             />
           </div>
 
-          <div className="w-full sm:w-auto flex items-center gap-2">
-            <CategorySelect
-              value={selectedCategory}
-              onChange={setSelectedCategory}
-              includeAll
-              className="w-full sm:w-48"
-              placeholder="Choose category"
-            />
-
-            <button
-              type="submit"
-              className="btn-accent !px-7 !py-2.5 !text-sm !font-bold whitespace-nowrap !rounded-xl shadow-md shadow-coral-500/20 flex-shrink-0"
-            >
-              Outbid
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="btn-accent !px-7 !py-2.5 !text-sm !font-bold whitespace-nowrap !rounded-xl shadow-md shadow-coral-500/20 flex-shrink-0"
+          >
+            Outbid
+          </button>
         </div>
 
         <p className="text-[11px] text-neutral-500 mt-2.5">
