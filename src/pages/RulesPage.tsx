@@ -10,9 +10,9 @@ export default function RulesPage() {
         'The leaderboard ranks every website, app, or profile strictly by how much was paid. The highest bidder sits at #1, the second highest at #2, and so forth.',
     },
     {
-      title: '2. Anyone Can Outbid Anyone',
+      title: '2. Anyone Can Outbid Anyone from $1',
       description:
-        'If someone outbids your spot by at least $1, their product immediately takes the higher position, shifting other spots down by one.',
+        'If someone outbids your spot by at least $1, their product immediately takes the higher position, shifting other spots down by one. Anyone can start ranking from $1.',
     },
     {
       title: '3. Permanent Placement',
@@ -20,7 +20,7 @@ export default function RulesPage() {
         'Spots do not expire after a few hours or days. Your position remains on the public board indefinitely until higher bids place other competitors above you.',
     },
     {
-      title: '4. Increasing Your Bid',
+      title: '4. Increasing Your Bid (Top Up)',
       description:
         'If your product is already on the leaderboard and has been outbid, simply enter your existing URL or @handle to increase your bid and climb back up.',
     },
@@ -34,11 +34,11 @@ export default function RulesPage() {
   const faqs = [
     {
       q: 'What is the minimum bid to get listed?',
-      a: 'The minimum bid for a new spot is just $5. Your bid places you on the board at whatever rank that amount commands.',
+      a: 'The minimum bid for a new spot is just $1. Your bid places you on the board at whatever rank that amount commands.',
     },
     {
       q: 'Do I get traffic and clicks from the leaderboard?',
-      a: 'Yes! Every listing has a direct outbound link. Millions of visitors, founders, investors, and early adopters browse the leaderboard.',
+      a: 'Yes! Every listing has a direct outbound link. Founders, builders, investors, and early adopters browse the leaderboard.',
     },
     {
       q: 'Can I edit my product title or description later?',
@@ -56,7 +56,7 @@ export default function RulesPage() {
           Rules of the Board
         </h1>
         <p className="text-sm text-neutral-400 mt-2">
-          Simple, transparent, gamified attention marketplace.
+          Simple, transparent, public attention market.
         </p>
       </div>
 
@@ -89,10 +89,10 @@ export default function RulesPage() {
 
       <div className="mt-12 text-center">
         <button
-          onClick={() => openModal()}
+          onClick={() => openModal({ initialAmount: 1 })}
           className="btn-accent !px-8 !py-3 !text-sm font-bold"
         >
-          Claim Your Spot →
+          Claim Your Spot for $1 →
         </button>
       </div>
     </div>

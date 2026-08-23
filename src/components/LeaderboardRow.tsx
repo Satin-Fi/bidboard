@@ -1,6 +1,7 @@
-﻿import type { LeaderboardListing } from '../types'
+import type { LeaderboardListing } from '../types'
 import { formatBid, formatClicks, timeAgo } from '../lib/format'
 import { useBidStore } from '../store/useBidStore'
+import { ArrowUpRight } from 'lucide-react'
 
 interface RowProps {
   listing: LeaderboardListing
@@ -38,9 +39,10 @@ export default function LeaderboardRow({ listing }: RowProps) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackClick(listing.id)}
-              className="font-display font-bold text-sm sm:text-base text-white hover:text-coral-400 transition-colors truncate"
+              className="font-display font-bold text-sm sm:text-base text-white hover:text-coral-400 transition-colors truncate inline-flex items-center gap-1"
             >
               {listing.title}
+              <ArrowUpRight className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" />
             </a>
           </div>
 
@@ -53,8 +55,8 @@ export default function LeaderboardRow({ listing }: RowProps) {
             <span>·</span>
             <span className="text-neutral-300">{listing.category}</span>
             <span>·</span>
-            <span className="text-coral-400 font-medium font-mono">
-              🔥 {formatClicks(listing.clickCount)} clicks
+            <span className="text-neutral-400 font-mono">
+              {formatClicks(listing.clickCount)} clicks
             </span>
           </div>
         </div>
@@ -70,7 +72,7 @@ export default function LeaderboardRow({ listing }: RowProps) {
             openModal({
               targetListing: listing,
               targetRank: listing.rank,
-              initialAmount: listing.currentBid + 5,
+              initialAmount: listing.currentBid + 1,
             })
           }
           className="mt-0.5 text-[10px] sm:text-xs font-semibold text-neutral-400 group-hover:text-coral-400 transition-colors"

@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useBidStore } from '../store/useBidStore'
 import { CATEGORIES_LIST } from '../types'
-import { formatBid } from '../lib/format'
 import LeaderboardHero from '../components/LeaderboardHero'
 import LeaderboardPodium from '../components/LeaderboardPodium'
 import ActivityTicker from '../components/ActivityTicker'
 import LeaderboardRow from '../components/LeaderboardRow'
+import { CategoryIcon, Search, Flame } from '../components/CategoryIcon'
 
 export default function HomePage() {
   const listings = useBidStore((s) => s.listings)
@@ -13,7 +13,6 @@ export default function HomePage() {
   const setCategory = useBidStore((s) => s.setCategory)
   const searchQuery = useBidStore((s) => s.searchQuery)
   const setSearch = useBidStore((s) => s.setSearch)
-  const stats = useBidStore((s) => s.stats)
   const openModal = useBidStore((s) => s.openModal)
 
   const [page, setPage] = useState(1)
@@ -59,13 +58,17 @@ export default function HomePage() {
                     setCategory(cat.slug)
                     setPage(1)
                   }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-coral-500 text-white shadow-md shadow-coral-500/20'
                       : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
                   }`}
                 >
-                  <span>{cat.icon}</span>
+                  {cat.slug === 'all' ? (
+                    <Flame className="w-3.5 h-3.5 text-coral-400" />
+                  ) : (
+                    <CategoryIcon name={cat.slug} className="w-3.5 h-3.5 opacity-80" />
+                  )}
                   <span>{cat.name}</span>
                 </button>
               )
@@ -73,9 +76,7 @@ export default function HomePage() {
           </div>
 
           <div className="relative w-full sm:w-48 flex-shrink-0">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs">
-              🔍
-            </span>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-3.5 h-3.5" />
             <input
               type="text"
               placeholder="Search spots..."
@@ -139,7 +140,7 @@ export default function HomePage() {
               onClick={() => openModal({ categorySlug: activeCategory })}
               className="btn-accent !mt-4 !py-2 !px-5 text-xs font-bold"
             >
-              + Be the first to claim #1
+              + Be the first to claim #1 for $1
             </button>
           </div>
         )
@@ -155,25 +156,15 @@ export default function HomePage() {
           >
             ‹
           </button>
-          {[1, 2, 3, 4].map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`w-7 h-7 rounded-lg font-mono font-medium flex items-center justify-center transition-colors ${
-                page === p
-                  ? 'bg-coral-500 text-white font-bold'
-                  : 'bg-surface hover:bg-surface-2 border border-white/10 text-neutral-300'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-          <span className="px-1 text-neutral-500">…</span>
           <button
-            onClick={() => setPage(23)}
-            className="w-7 h-7 rounded-lg font-mono font-medium flex items-center justify-center bg-surface hover:bg-surface-2 border border-white/10 text-neutral-300"
+            onClick={() => setPage(1)}
+            className={`w-7 h-7 rounded-lg font-mono font-medium flex items-center justify-center transition-colors ${
+              page === 1
+                ? 'bg-coral-500 text-white font-bold'
+                : 'bg-surface hover:bg-surface-2 border border-white/10 text-neutral-300'
+            }`}
           >
-            23
+            1
           </button>
           <button
             disabled={page >= totalPages}
@@ -186,7 +177,7 @@ export default function HomePage() {
 
         <div className="flex items-center gap-3">
           <span>
-            1 - {Math.min(filteredListings.length, pageSize)} of {stats.totalListings}
+            1 - {Math.min(filteredListings.length, pageSize)} of {filteredListings.length}
           </span>
           <button
             onClick={() => window.location.reload()}
@@ -197,28 +188,28 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Giant Bottom Revenue Highlight Card ────────────────────── */}
+      {/* ── Bottom Community Stats Card ────────────────────── */}
       <section className="mt-14 p-8 sm:p-12 rounded-3xl bg-[#13151c] border border-white/[0.08] text-center relative overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-b from-coral-500/5 via-transparent to-transparent pointer-events-none" />
 
         <p className="text-xs sm:text-sm text-neutral-400 font-medium">
-          This <span className="text-coral-400 font-semibold underline underline-offset-4">public attention market</span> made
+          A <span className="text-coral-400 font-semibold underline underline-offset-4">public attention market</span> where
         </p>
 
-        <div className="my-3 font-display font-black text-5xl sm:text-7xl text-coral-500 tracking-tight select-all drop-shadow-sm">
-          {formatBid(stats.totalRevenue)}
+        <div className="my-3 font-display font-black text-4xl sm:text-6xl text-coral-500 tracking-tight select-all drop-shadow-sm">
+          Rank is determined by bid.
         </div>
 
-        <p className="text-xs text-neutral-500">
-          since its launch {stats.launchHoursAgo} hours ago
+        <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
+          Anyone can start ranking from $1. Outbid the competition to climb and claim your position.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
-            onClick={() => openModal()}
+            onClick={() => openModal({ initialAmount: 1 })}
             className="btn-accent !px-8 !py-3 !text-sm !font-bold !rounded-xl"
           >
-            Claim Your Spot Now →
+            Claim Your Spot for $1 →
           </button>
         </div>
       </section>

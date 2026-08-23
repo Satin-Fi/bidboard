@@ -50,15 +50,15 @@ export default function ListingCard({ listing }: { listing: LeaderboardListing }
       <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-xs">
         <span className="text-neutral-500 text-[11px]">{timeAgo(listing.createdAt)}</span>
         <div className="flex items-center gap-2">
-          <span className="text-coral-400 font-mono text-[11px]">
-            🔥 {formatClicks(listing.clickCount)}
+          <span className="text-neutral-400 font-mono text-[11px]">
+            {formatClicks(listing.clickCount)} clicks
           </span>
           <button
             onClick={() =>
               openModal({
                 targetListing: listing,
                 targetRank: listing.rank,
-                initialAmount: listing.currentBid + 5,
+                initialAmount: listing.currentBid + 1,
               })
             }
             className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-neutral-300 hover:text-white"
@@ -70,4 +70,3 @@ export default function ListingCard({ listing }: { listing: LeaderboardListing }
     </div>
   )
 }
-

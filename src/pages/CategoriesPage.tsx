@@ -1,7 +1,8 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { CATEGORIES_LIST } from '../types'
 import { useBidStore } from '../store/useBidStore'
 import { formatBid } from '../lib/format'
+import { CategoryIcon } from '../components/CategoryIcon'
 
 export default function CategoriesPage() {
   const listings = useBidStore((s) => s.listings)
@@ -18,7 +19,7 @@ export default function CategoriesPage() {
           Explore by Category
         </h1>
         <p className="text-sm text-neutral-400 mt-2 max-w-md mx-auto">
-          Discover ranked products, AI tools, startups, and services across all industries.
+          Discover ranked products, startups, tools, and creator profiles across all industries.
         </p>
       </div>
 
@@ -33,8 +34,10 @@ export default function CategoriesPage() {
               className="p-5 rounded-2xl bg-surface border border-white/[0.06] hover:border-white/[0.15] hover:bg-surface-2 transition-all flex flex-col justify-between group"
             >
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl">{cat.icon}</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center text-coral-400">
+                    <CategoryIcon name={cat.slug} className="w-4 h-4" />
+                  </div>
                   <span className="px-2.5 py-0.5 rounded-full bg-white/[0.05] text-xs font-mono font-semibold text-neutral-400">
                     {categoryListings.length} spots
                   </span>
@@ -50,7 +53,7 @@ export default function CategoriesPage() {
                   </p>
                 ) : (
                   <p className="text-xs text-neutral-500 mt-2">
-                    No products yet. Be the first!
+                    No products yet. Be the first to rank from $1!
                   </p>
                 )}
               </div>
@@ -64,10 +67,10 @@ export default function CategoriesPage() {
                   View leaderboard →
                 </Link>
                 <button
-                  onClick={() => openModal({ categorySlug: cat.slug })}
+                  onClick={() => openModal({ categorySlug: cat.slug, initialAmount: 1 })}
                   className="text-[11px] font-medium text-neutral-400 hover:text-white"
                 >
-                  + Add product
+                  + Add product ($1)
                 </button>
               </div>
             </div>

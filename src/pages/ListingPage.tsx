@@ -1,6 +1,7 @@
-﻿import { useParams, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
 import { formatBid, formatClicks, timeAgo } from '../lib/format'
+import { ArrowUpRight } from 'lucide-react'
 
 export default function ListingPage() {
   const { id } = useParams<{ id: string }>()
@@ -22,7 +23,7 @@ export default function ListingPage() {
     )
   }
 
-  const nextBid = listing.currentBid + 5
+  const nextBid = listing.currentBid + 1
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -52,9 +53,9 @@ export default function ListingPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick(listing.id)}
-                className="text-xs text-coral-400 hover:underline mt-0.5 inline-block"
+                className="text-xs text-coral-400 hover:underline mt-0.5 inline-flex items-center gap-1"
               >
-                {listing.displayUrl} ↗
+                {listing.displayUrl} <ArrowUpRight className="w-3 h-3" />
               </a>
             </div>
           </div>
@@ -75,7 +76,7 @@ export default function ListingPage() {
           <div className="p-3 rounded-xl bg-surface-2 border border-white/[0.04]">
             <div className="text-[11px] text-neutral-400">Total Clicks</div>
             <div className="font-display font-bold text-lg text-white mt-0.5">
-              🔥 {formatClicks(listing.clickCount)}
+              {formatClicks(listing.clickCount)}
             </div>
           </div>
           <div className="p-3 rounded-xl bg-surface-2 border border-white/[0.04]">
@@ -98,9 +99,9 @@ export default function ListingPage() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackClick(listing.id)}
-            className="flex-1 btn-secondary !py-3 !text-sm text-center font-bold"
+            className="flex-1 btn-secondary !py-3 !text-sm text-center font-bold inline-flex items-center justify-center gap-1"
           >
-            Visit Website ↗
+            Visit Website <ArrowUpRight className="w-4 h-4" />
           </a>
           <button
             onClick={() =>

@@ -4,6 +4,7 @@ import { CATEGORIES_LIST } from '../types'
 import { calculateRank } from '../lib/rules'
 import { formatBid, cleanUrl } from '../lib/format'
 import { useUiStore } from '../store/useUiStore'
+import { X, Globe } from 'lucide-react'
 
 export default function OutbidModal() {
   const modal = useBidStore((s) => s.modal)
@@ -14,15 +15,15 @@ export default function OutbidModal() {
 
   const topListing = listings[0]
   const defaultMinBid = modal.targetListing
-    ? modal.targetListing.currentBid + 5
+    ? modal.targetListing.currentBid + 1
     : topListing
-      ? topListing.currentBid + 5
-      : 15
+      ? topListing.currentBid + 1
+      : 1
 
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('ai-agents-infrastructure')
+  const [category, setCategory] = useState('ai-automation')
   const [amount, setAmount] = useState(defaultMinBid)
   const [bidder, setBidder] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,11 +31,11 @@ export default function OutbidModal() {
   useEffect(() => {
     if (modal.open) {
       const initialAmt = modal.initialAmount || defaultMinBid
-      setAmount(initialAmt)
+      setAmount(Math.max(1, initialAmt))
       setUrl(modal.initialUrl || '')
       setTitle(modal.targetListing?.title || '')
       setDescription(modal.targetListing?.description || '')
-      setCategory(modal.categorySlug && modal.categorySlug !== 'all' ? modal.categorySlug : 'ai-agents-infrastructure')
+      setCategory(modal.categorySlug && modal.categorySlug !== 'all' ? modal.categorySlug : 'ai-automation')
     }
   }, [modal.open, modal.targetListing, modal.initialUrl, modal.initialAmount, modal.categorySlug, defaultMinBid])
 
@@ -48,8 +49,8 @@ export default function OutbidModal() {
       pushToast('Please enter a valid website URL or @handle.', 'warn')
       return
     }
-    if (amount < 5) {
-      pushToast('Minimum bid is $5.', 'warn')
+    if (amount < 1) {
+      pushToast('Minimum bid is $1.', 'warn')
       return
     }
 
@@ -64,7 +65,7 @@ export default function OutbidModal() {
         amount: Number(amount),
         bidder: bidder.trim() || 'Anonymous',
       })
-      pushToast(`🎉 Success! Ranked at #${result.rank} with ${formatBid(amount)}.`, 'ok')
+      pushToast(`Success! Ranked at #${result.rank} with ${formatBid(amount)}.`, 'ok')
       closeModal()
     } catch {
       pushToast('Could not process bid.', 'warn')
@@ -79,7 +80,7 @@ export default function OutbidModal() {
         className="w-full max-w-lg rounded-2xl bg-[#13151c] border border-white/10 shadow-2xl p-6 sm:p-7 relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute -right-16 -top-16 w-36 h-36 bg-coral-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-16 -top-16 w-36 h-36 bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -94,28 +95,33 @@ export default function OutbidModal() {
             onClick={closeModal}
             className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted hover:text-white transition-colors"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Your Website URL or @handle</label>
-            <input
-              type="text"
-              required
-              placeholder="https://yourproduct.com or @handle"
-              value={url}
-              onChange={(e) => {
-                setUrl(e.target.value)
-                if (!title) {
-                  const cleaned = cleanUrl(e.target.value)
-                  const parts = cleaned.split('.')
-                  if (parts.length > 0 && parts[0]) setTitle(parts[0])
-                }
-              }}
-              className="input text-sm"
-            />
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                <Globe className="w-4 h-4" />
+              </span>
+              <input
+                type="text"
+                required
+                placeholder="https://yourproduct.com or @handle"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value)
+                  if (!title) {
+                    const cleaned = cleanUrl(e.target.value)
+                    const parts = cleaned.split('.')
+                    if (parts.length > 0 && parts[0]) setTitle(parts[0])
+                  }
+                }}
+                className="input text-sm !pl-10"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -138,7 +144,7 @@ export default function OutbidModal() {
               >
                 {CATEGORIES_LIST.filter((c) => c.slug !== 'all').map((c) => (
                   <option key={c.slug} value={c.slug} className="bg-surface text-white">
-                    {c.icon} {c.name}
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -174,7 +180,7 @@ export default function OutbidModal() {
                 Your Bid Amount ($)
               </label>
               <span className="text-xs text-neutral-400 font-mono">
-                Min: $5 · #1 Price: {formatBid(topListing?.currentBid || 15000)}
+                Min: $1 · #1 Price: {formatBid(topListing?.currentBid || 1)}
               </span>
             </div>
 
@@ -185,24 +191,24 @@ export default function OutbidModal() {
                 </span>
                 <input
                   type="number"
-                  min={5}
+                  min={1}
                   step={1}
                   required
                   value={amount}
-                  onChange={(e) => setAmount(Math.max(5, Number(e.target.value)))}
+                  onChange={(e) => setAmount(Math.max(1, Number(e.target.value)))}
                   className="input !pl-8 font-display font-bold text-xl text-coral-400"
                 />
               </div>
 
               <div className="flex gap-1.5">
-                {[10, 50, 250, 1000].map((inc) => (
+                {[1, 5, 10, 25].map((inc) => (
                   <button
                     key={inc}
                     type="button"
                     onClick={() => setAmount((prev) => prev + inc)}
                     className="px-2.5 py-2 text-xs font-mono font-medium rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-colors"
                   >
-                    +{inc >= 1000 ? `${inc / 1000}k` : inc}
+                    +{inc}
                   </button>
                 ))}
               </div>
@@ -225,7 +231,7 @@ export default function OutbidModal() {
                   #{estimatedRank}
                 </span>
                 <span className="text-xs text-neutral-400">
-                  {estimatedRank === 1 ? '👑 Top Spot!' : `Outbids ${listings.length - estimatedRank + 1} spots`}
+                  {estimatedRank === 1 ? 'Top Spot' : `Outbids ${Math.max(0, listings.length - estimatedRank + 1)} spots`}
                 </span>
               </div>
             </div>
@@ -235,7 +241,7 @@ export default function OutbidModal() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full btn-accent !py-3 !text-base !font-bold flex items-center justify-center gap-2"
+              className="w-full btn-accent !py-3 !text-base !font-bold flex items-center justify-center gap-2 shadow-lg shadow-coral-500/20"
             >
               {isSubmitting ? 'Securing spot...' : `Claim #${estimatedRank} for ${formatBid(amount)} →`}
             </button>

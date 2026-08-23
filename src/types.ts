@@ -61,22 +61,22 @@ export interface GlobalStats {
 }
 
 export const CATEGORIES_LIST: Category[] = [
-  { name: 'All', slug: 'all', icon: '🔥' },
-  { name: 'SEO & AI Visibility', slug: 'seo-ai-visibility', icon: '🔍' },
-  { name: 'AI Agents & Infrastructure', slug: 'ai-agents-infrastructure', icon: '🤖' },
-  { name: 'AI Media Generation', slug: 'ai-media-generation', icon: '🎨' },
-  { name: 'Marketing & Advertising', slug: 'marketing-advertising', icon: '📢' },
-  { name: 'Developer Tools', slug: 'developer-tools', icon: '🛠️' },
-  { name: 'Productivity & SaaS', slug: 'productivity-saas', icon: '⚡' },
-  { name: 'Crypto, Web3 & Investing', slug: 'crypto-web3-investing', icon: '🪙' },
-  { name: 'Security, Privacy & Compliance', slug: 'security-privacy-compliance', icon: '🛡️' },
-  { name: 'Health, Fitness & Wellness', slug: 'health-fitness-wellness', icon: '🥗' },
-  { name: 'Hiring, Jobs & Careers', slug: 'hiring-jobs-careers', icon: '💼' },
-  { name: 'Social Media & Creator Tools', slug: 'social-media-creator-tools', icon: '📱' },
-  { name: 'Ecommerce & Retail', slug: 'ecommerce-retail', icon: '🛒' },
-  { name: 'Education & Learning', slug: 'education-learning', icon: '🎓' },
-  { name: 'Other', slug: 'other', icon: '📌' },
+  { name: 'All', slug: 'all', icon: 'all' },
+  { name: 'AI & Automation', slug: 'ai-automation', icon: 'ai-automation' },
+  { name: 'Developer Tools', slug: 'developer-tools', icon: 'developer-tools' },
+  { name: 'Productivity & SaaS', slug: 'productivity', icon: 'productivity' },
+  { name: 'Marketing & SEO', slug: 'marketing', icon: 'marketing' },
+  { name: 'Design & Creative', slug: 'design-creative', icon: 'design-creative' },
+  { name: 'Startups & Launches', slug: 'startups-launches', icon: 'startups-launches' },
+  { name: 'Crypto & Web3', slug: 'crypto-web3', icon: 'crypto-web3' },
+  { name: 'Security & Privacy', slug: 'security-privacy', icon: 'security-privacy' },
+  { name: 'Finance & Fintech', slug: 'finance-fintech', icon: 'finance-fintech' },
+  { name: 'Ecommerce', slug: 'ecommerce', icon: 'ecommerce' },
+  { name: 'Social & Creator', slug: 'social-creator', icon: 'social-creator' },
+  { name: 'Health & Fitness', slug: 'health-fitness', icon: 'health-fitness' },
+  { name: 'Education', slug: 'education', icon: 'education' },
+  { name: 'Games & Entertainment', slug: 'games-entertainment', icon: 'games-entertainment' },
+  { name: 'Other', slug: 'other', icon: 'other' },
 ]
 
 export type CategorySlug = typeof CATEGORIES_LIST[number]['slug']
-

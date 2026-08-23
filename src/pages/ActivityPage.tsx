@@ -1,5 +1,6 @@
-﻿import { useBidStore } from '../store/useBidStore'
+import { useBidStore } from '../store/useBidStore'
 import { formatBid, formatNumber, timeAgo } from '../lib/format'
+import { Trophy, Zap, Sparkles } from 'lucide-react'
 
 export default function ActivityPage() {
   const activities = useBidStore((s) => s.activities)
@@ -46,10 +47,10 @@ export default function ActivityPage() {
           </p>
         </div>
         <button
-          onClick={() => openModal()}
+          onClick={() => openModal({ initialAmount: 1 })}
           className="btn-accent !py-2 !px-4 text-xs font-bold"
         >
-          + Outbid & Climb
+          + Outbid & Climb ($1)
         </button>
       </div>
 
@@ -69,7 +70,13 @@ export default function ActivityPage() {
                       : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                 }`}
               >
-                {evt.type === 'claim_top' ? '👑' : evt.type === 'outbid' ? '⚡' : '✨'}
+                {evt.type === 'claim_top' ? (
+                  <Trophy className="w-5 h-5" />
+                ) : evt.type === 'outbid' ? (
+                  <Zap className="w-5 h-5" />
+                ) : (
+                  <Sparkles className="w-5 h-5" />
+                )}
               </div>
 
               <div>

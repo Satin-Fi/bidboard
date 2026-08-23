@@ -1,6 +1,7 @@
 import type { LeaderboardListing } from '../types'
 import { formatBid, formatClicks, timeAgo } from '../lib/format'
 import { useBidStore } from '../store/useBidStore'
+import { ArrowUpRight } from 'lucide-react'
 
 interface PodiumProps {
   listings: LeaderboardListing[]
@@ -16,7 +17,7 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
   return (
     <div className="space-y-3 mb-6">
       {top3.map((item, idx) => {
-        const nextPrice = item.currentBid + 5
+        const nextPrice = item.currentBid + 1
 
         return (
           <div key={item.id} className="relative group">
@@ -55,9 +56,10 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => trackClick(item.id)}
-                        className="font-display font-bold text-base sm:text-lg text-white hover:text-coral-400 transition-colors truncate"
+                        className="font-display font-bold text-base sm:text-lg text-white hover:text-coral-400 transition-colors truncate inline-flex items-center gap-1"
                       >
                         {item.title}
+                        <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
                       </a>
                     </div>
 
@@ -71,8 +73,8 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
                       <span>·</span>
                       <span className="text-neutral-300">{item.category}</span>
                       <span>·</span>
-                      <span className="text-coral-400 font-medium font-mono">
-                        🔥 {formatClicks(item.clickCount)} clicks
+                      <span className="text-neutral-400 font-mono">
+                        {formatClicks(item.clickCount)} clicks
                       </span>
                     </div>
                   </div>
@@ -99,7 +101,7 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
               </div>
             </div>
 
-            {/* ── Interstitial hover claim rank chip ─────────────── */}
+            {/* ── Interstitial claim rank chip ─────────────── */}
             {idx < top3.length - 1 && (
               <div className="flex justify-center -my-2 relative z-10">
                 <button
