@@ -111,7 +111,7 @@ export default function OutbidModal() {
       onClick={closeModal}
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-surface border border-white/10 shadow-2xl p-6 sm:p-7 relative overflow-hidden"
+        className="w-full max-w-lg rounded-2xl bg-surface border border-white/10 shadow-2xl p-6 sm:p-7 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute -right-16 -top-16 w-36 h-36 bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -177,6 +177,7 @@ export default function OutbidModal() {
                 onChange={setCategory}
                 className="w-full"
                 placeholder="Select category"
+                dropdownAlign="full"
               />
             </div>
           </div>

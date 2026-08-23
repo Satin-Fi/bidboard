@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
-import { CATEGORIES_LIST } from '../types'
 import { calculateRank } from '../lib/rules'
 import { formatBid } from '../lib/format'
+import CategorySelect from '../components/CategorySelect'
 
 export default function SellPage() {
   const navigate = useNavigate()
@@ -13,7 +13,7 @@ export default function SellPage() {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('ai-agents-infrastructure')
+  const [category, setCategory] = useState('ai-automation')
   const [amount, setAmount] = useState(top1 ? top1.currentBid + 5 : 25)
   const [bidder, setBidder] = useState('')
 
@@ -73,17 +73,13 @@ export default function SellPage() {
           </div>
           <div>
             <label className="label">Category</label>
-            <select
+            <CategorySelect
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="input text-sm bg-surface appearance-none cursor-pointer"
-            >
-              {CATEGORIES_LIST.filter((c) => c.slug !== 'all').map((c) => (
-                <option key={c.slug} value={c.slug} className="bg-surface text-white">
-                  {c.icon} {c.name}
-                </option>
-              ))}
-            </select>
+              onChange={setCategory}
+              className="w-full"
+              placeholder="Select category"
+              dropdownAlign="full"
+            />
           </div>
         </div>
 
