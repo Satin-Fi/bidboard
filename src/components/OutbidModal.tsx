@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useBidStore } from '../store/useBidStore'
-import { CATEGORIES_LIST } from '../types'
 import { calculateRank } from '../lib/rules'
 import { formatBid, cleanUrl } from '../lib/format'
 import { useUiStore } from '../store/useUiStore'
 import { createCheckoutSession } from '../lib/payment'
+import CategorySelect from './CategorySelect'
 import { X, Globe, Trophy, Sparkles } from 'lucide-react'
 
 export default function OutbidModal() {
@@ -172,17 +172,12 @@ export default function OutbidModal() {
             </div>
             <div>
               <label className="label">Category</label>
-              <select
+              <CategorySelect
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="input text-sm bg-surface appearance-none cursor-pointer"
-              >
-                {CATEGORIES_LIST.filter((c) => c.slug !== 'all').map((c) => (
-                  <option key={c.slug} value={c.slug} className="bg-surface text-white">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setCategory}
+                className="w-full"
+                placeholder="Select category"
+              />
             </div>
           </div>
 
@@ -215,7 +210,7 @@ export default function OutbidModal() {
                 Your Bid Amount ($)
               </label>
               <span className="text-xs text-neutral-400 font-mono">
-                Min: $1 · #1 Price: {formatBid(topListing?.currentBid || 1)}
+                Min: $1 {topListing ? `· #1 Price: ${formatBid(topListing.currentBid)}` : '· First Spot'}
               </span>
             </div>
 

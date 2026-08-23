@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import ToastViewport from './ToastViewport'
 import OutbidModal from './OutbidModal'
 import { useBidStore } from '../store/useBidStore'
-import { Layers, Plus, ArrowUpRight } from 'lucide-react'
+import { Plus, ArrowUpRight } from 'lucide-react'
 
 export default function Layout() {
   const openModal = useBidStore((s) => s.openModal)
@@ -21,10 +21,11 @@ export default function Layout() {
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-bg/85 backdrop-blur-md">
         <div className="mx-auto max-w-4xl px-4 h-15 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-gradient-to-br from-coral-500 to-coral-600 text-white shadow-sm shadow-coral-500/30 group-hover:scale-105 transition-transform">
-              <Layers className="w-4 h-4" />
+            {/* Iconic "B" Lettermark Logo */}
+            <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-xl bg-coral-500 font-display font-black text-white text-sm sm:text-base shadow-md shadow-coral-500/30 group-hover:scale-105 transition-transform select-none">
+              B
             </div>
-            <span className="font-display font-extrabold text-lg tracking-tight text-white group-hover:text-coral-400 transition-colors">
+            <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-coral-400 transition-colors">
               Bidboard<span className="text-coral-500 font-normal">.app</span>
             </span>
           </Link>
@@ -76,7 +77,7 @@ export default function Layout() {
             </Link>
             <span className="text-neutral-600 hidden sm:inline">·</span>
             <Link to="/activity" className="text-neutral-400 hover:text-white transition-colors inline-flex items-center gap-0.5">
-              Live Stats <ArrowUpRight className="w-3 h-3" />
+              Live Activity <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="text-neutral-600 text-[11px]">

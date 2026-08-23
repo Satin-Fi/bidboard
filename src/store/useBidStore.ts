@@ -55,12 +55,12 @@ export const useBidStore = create<LeaderboardState>((set, get) => ({
   listings: recalculateRanks(seedListings),
   activities: seedActivities,
   stats: {
-    onlineCount: 580,
-    totalVisitors: 1214522,
-    totalRevenue: 177518,
-    launchHoursAgo: 83,
-    totalListings: 1147,
-    totalClicks: 215480,
+    onlineCount: 1,
+    totalVisitors: 1,
+    totalRevenue: seedListings.reduce((acc, l) => acc + l.currentBid, 0),
+    launchHoursAgo: 1,
+    totalListings: seedListings.length,
+    totalClicks: seedListings.reduce((acc, l) => acc + l.clickCount, 0),
   },
   activeCategory: 'all',
   searchQuery: '',
@@ -77,7 +77,7 @@ export const useBidStore = create<LeaderboardState>((set, get) => ({
         targetListing: params.targetListing || null,
         targetRank: params.targetRank,
         initialUrl: params.initialUrl || params.targetListing?.url || '',
-        initialAmount: params.initialAmount || (params.targetListing ? params.targetListing.currentBid + 5 : undefined),
+        initialAmount: params.initialAmount || (params.targetListing ? params.targetListing.currentBid + 1 : 1),
         categorySlug: params.categorySlug || params.targetListing?.categorySlug || 'all',
       },
     }),
@@ -156,20 +156,29 @@ export const useBidStore = create<LeaderboardState>((set, get) => ({
       activities: [newActivity, ...state.activities.slice(0, 19)],
       stats: {
         ...state.stats,
-        totalRevenue: state.stats.totalRevenue + amount,
+        totalRevenue: reRanked.reduce((acc, l) => acc + l.currentBid, 0),
+        totalListings: reRanked.length,
+        totalClicks: reRanked.reduce((acc, l) => acc + l.clickCount, 0),
       },
     })
 
     return { rank: newRank, listing: finalItem }
   },
 
-  hydrate: (listings, activities) =>
+  hydrate: (listings, activities) => {
+    const reRanked = recalculateRanks(listings)
     set((s) => ({
-      listings: recalculateRanks(listings.length > 0 ? listings : s.listings),
+      listings: reRanked,
       activities: activities || s.activities,
+      stats: {
+        ...s.stats,
+        totalRevenue: reRanked.reduce((acc, l) => acc + l.currentBid, 0),
+        totalListings: reRanked.length,
+        totalClicks: reRanked.reduce((acc, l) => acc + l.clickCount, 0),
+      },
       loaded: true,
-    })),
+    }))
+  },
 }))
 
 export type { LeaderboardListing, ActivityEvent, GlobalStats }
-

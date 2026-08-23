@@ -6,7 +6,7 @@ import LeaderboardPodium from '../components/LeaderboardPodium'
 import ActivityTicker from '../components/ActivityTicker'
 import LeaderboardRow from '../components/LeaderboardRow'
 import { CategoryIcon, Search, Flame } from '../components/CategoryIcon'
-import { RotateCw, Plus } from 'lucide-react'
+import { RotateCw, Plus, Trophy, Sparkles } from 'lucide-react'
 
 export default function HomePage() {
   const listings = useBidStore((s) => s.listings)
@@ -46,10 +46,10 @@ export default function HomePage() {
       {/* ── Hero Component ────────────────────────────────────────── */}
       <LeaderboardHero />
 
-      {/* ── Category Filter Pills & Search ───────────────────────── */}
-      <div className="my-6 space-y-3">
+      {/* ── Category Filter Pills & Search with Clean Alignment ──── */}
+      <div className="my-6">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none no-scrollbar flex-1">
+          <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar flex-1">
             {CATEGORIES_LIST.map((cat) => {
               const isActive = activeCategory === cat.slug
               return (
@@ -76,7 +76,7 @@ export default function HomePage() {
             })}
           </div>
 
-          <div className="relative w-full sm:w-52 flex-shrink-0">
+          <div className="relative w-full sm:w-56 flex-shrink-0">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 w-3.5 h-3.5" />
             <input
               type="text"
@@ -86,20 +86,43 @@ export default function HomePage() {
                 setSearch(e.target.value)
                 setPage(1)
               }}
-              className="w-full bg-surface border border-white/10 rounded-full pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-coral-500/60 transition-colors"
+              className="w-full bg-surface border border-white/10 rounded-full pl-9 pr-3 py-2 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-coral-500/60 transition-colors"
             />
           </div>
         </div>
       </div>
 
-      {/* ── Top 3 Podium Cards ────────────────────────────────────── */}
-      <LeaderboardPodium listings={top3} />
+      {/* ── Top 3 Podium Cards or Clean Empty State ───────────────── */}
+      {top3.length > 0 ? (
+        <LeaderboardPodium listings={top3} />
+      ) : (
+        <div className="my-6 p-8 sm:p-10 rounded-2xl bg-surface border border-amber-500/30 shadow-glow-gold/10 text-center relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-black flex items-center justify-center mx-auto mb-4 shadow-md shadow-amber-500/25">
+            <Trophy className="w-6 h-6" />
+          </div>
+          <h2 className="font-display font-bold text-2xl text-white">
+            #1 Spot is Unclaimed
+          </h2>
+          <p className="text-sm text-neutral-400 max-w-md mx-auto mt-2 leading-relaxed">
+            The board is fresh and ready for real submissions. Be the first product or creator to claim the top rank for just <span className="text-coral-400 font-semibold font-mono">$1.00</span>.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => openModal({ initialAmount: 1, categorySlug: activeCategory })}
+              className="btn-accent !px-6 !py-2.5 !text-sm !font-bold flex items-center gap-2 !rounded-xl shadow-lg shadow-coral-500/25"
+            >
+              <Sparkles className="w-4 h-4" />
+              Claim #1 Spot for $1 →
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* ── Real-time Activity Ticker ─────────────────────────────── */}
+      {/* ── Real-time Activity Ticker (if any) ────────────────────── */}
       <ActivityTicker />
 
       {/* ── Vertical Ranked List (Ranks #4 and below) ─────────────── */}
-      {rest.length > 0 ? (
+      {rest.length > 0 && (
         <div className="space-y-2.5 my-6">
           {rest.map((item, index) => {
             const actualRank = item.rank
@@ -133,19 +156,6 @@ export default function HomePage() {
             )
           })}
         </div>
-      ) : (
-        top3.length === 0 && (
-          <div className="text-center py-16 rounded-2xl bg-surface border border-white/[0.06] my-8">
-            <p className="text-neutral-400 text-sm">No listings found in this category.</p>
-            <button
-              onClick={() => openModal({ categorySlug: activeCategory })}
-              className="btn-accent !mt-4 !py-2 !px-5 text-xs font-bold"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Be the first to claim #1 for $1
-            </button>
-          </div>
-        )
       )}
 
       {/* ── Pagination & Refresh Controls ─────────────────────────── */}
@@ -179,7 +189,9 @@ export default function HomePage() {
 
         <div className="flex items-center gap-3">
           <span className="font-mono text-neutral-400">
-            1 - {Math.min(filteredListings.length, pageSize)} of {filteredListings.length} spots
+            {filteredListings.length === 0
+              ? '0 spots'
+              : `1 - ${Math.min(filteredListings.length, pageSize)} of ${filteredListings.length} spots`}
           </span>
           <button
             onClick={() => window.location.reload()}
@@ -212,6 +224,7 @@ export default function HomePage() {
             onClick={() => openModal({ initialAmount: 1 })}
             className="btn-accent !px-8 !py-3 !text-sm !font-bold !rounded-xl"
           >
+            <Plus className="w-4 h-4" />
             Claim Your Spot for $1 →
           </button>
         </div>
