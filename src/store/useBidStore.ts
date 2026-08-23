@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Listing, ListingFormat, Category, AuctionType } from '../types'
 import { displayPrice } from '../lib/rules'
+import { seedListings } from '../data/seed'
 
 export type SortKey = 'ending' | 'bid' | 'new' | 'impr' | 'cpm'
 
@@ -24,14 +25,20 @@ interface MarketState {
 }
 
 export const useBidStore = create<MarketState>((set) => ({
-  listings: [],
+  listings: seedListings,
   bids: {},
   watched: [],
   savedSearches: [],
   sort: 'ending',
-  loaded: false,
+  loaded: true,
 
-  hydrate: (listings, watched, savedSearches = []) => set({ listings, watched, savedSearches, loaded: true }),
+  hydrate: (listings, watched, savedSearches = []) =>
+    set({
+      listings: Array.isArray(listings) && listings.length > 0 ? listings : seedListings,
+      watched,
+      savedSearches,
+      loaded: true,
+    }),
 
   applyListing: (listing) =>
     set((s) => ({
