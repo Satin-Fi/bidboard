@@ -100,3 +100,42 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Bidboard Signature: "a city of lit billboards at night" ──
+   The leaderboard is a wall of illuminated slots; the #1 board is lit.
+   One bold place, everything else quiet (frontend-design restraint). */
+
+/* Coral horizon glow behind the hero — a billboard district after dark. */
+.hero-glow::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -45% 0;
+  height: 75%;
+  background: radial-gradient(ellipse 60% 100% at 50% 100%, rgba(255, 87, 34, 0.18), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Illuminated #1 slot — the top board is "on". */
+.rank-lit {
+  box-shadow: inset 3px 0 0 0 theme('colors.coral.500'), 0 0 24px rgba(255, 87, 34, 0.12);
+  border-color: rgba(255, 87, 34, 0.24) !important;
+}
+
+/* Live rank-flux: a quick coral breath when a row reorders or mounts. */
+@keyframes rankFlux {
+  0% { background-color: rgba(255, 87, 34, 0.12); }
+  100% { background-color: transparent; }
+}
+.animate-rank-flux {
+  animation: rankFlux 1.6s ease-out;
+}
+
+/* Subtle "marquee bulb" pulse for the live online indicator. */
+@keyframes bulb {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 87, 34, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(255, 87, 34, 0); }
+}
+.animate-bulb {
+  animation: bulb 2.4s ease-out infinite;
+}
