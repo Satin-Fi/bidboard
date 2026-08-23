@@ -1,5 +1,4 @@
 import { useBidStore } from '../store/useBidStore'
-import { Sparkles } from 'lucide-react'
 
 export default function RulesPage() {
   const openModal = useBidStore((s) => s.openModal)
@@ -93,7 +92,6 @@ export default function RulesPage() {
           onClick={() => openModal({ initialAmount: 1 })}
           className="btn-accent !px-8 !py-3 !text-sm font-bold !rounded-xl"
         >
-          <Sparkles className="w-4 h-4" />
           Claim Your Spot for $1 →
         </button>
       </div>

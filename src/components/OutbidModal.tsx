@@ -5,7 +5,7 @@ import { formatBid, cleanUrl } from '../lib/format'
 import { useUiStore } from '../store/useUiStore'
 import { createCheckoutSession } from '../lib/payment'
 import CategorySelect from './CategorySelect'
-import { X, Globe, Trophy, Sparkles } from 'lucide-react'
+import { X, Globe, Trophy } from 'lucide-react'
 
 export default function OutbidModal() {
   const modal = useBidStore((s) => s.modal)
@@ -270,9 +270,8 @@ export default function OutbidModal() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full btn-accent !py-3 !text-base !font-bold flex items-center justify-center gap-2 shadow-lg shadow-coral-500/20"
+              className="w-full btn-accent !py-3 !text-base !font-bold flex items-center justify-center shadow-lg shadow-coral-500/20"
             >
-              <Sparkles className="w-4 h-4" />
               {isSubmitting ? 'Securing spot...' : `Claim #${estimatedRank} for ${formatBid(amount)} →`}
             </button>
             <p className="text-center text-[11px] text-neutral-500 mt-2">

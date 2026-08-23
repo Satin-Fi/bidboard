@@ -1,6 +1,6 @@
 import { useBidStore } from '../store/useBidStore'
 import { formatBid, formatNumber, timeAgo } from '../lib/format'
-import { Trophy, Zap, Sparkles, Plus } from 'lucide-react'
+import { Trophy, Zap, Sparkles } from 'lucide-react'
 
 export default function ActivityPage() {
   const activities = useBidStore((s) => s.activities)
@@ -50,7 +50,6 @@ export default function ActivityPage() {
           onClick={() => openModal({ initialAmount: 1 })}
           className="btn-accent !py-2 !px-4 text-xs font-bold"
         >
-          <Plus className="w-3.5 h-3.5" />
           Outbid & Climb ($1)
         </button>
       </div>

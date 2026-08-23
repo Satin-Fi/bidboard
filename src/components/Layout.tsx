@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import ToastViewport from './ToastViewport'
 import OutbidModal from './OutbidModal'
 import { useBidStore } from '../store/useBidStore'
-import { Plus, ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 
 export default function Layout() {
   const openModal = useBidStore((s) => s.openModal)
@@ -17,14 +17,16 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-bg text-[#f3f4f6] selection:bg-coral-500/30 selection:text-coral-200">
-      {/* ── Top Header ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-bg/85 backdrop-blur-md">
-        <div className="mx-auto max-w-4xl px-4 h-15 flex items-center justify-between">
+      {/* ── Top Header Bar ───────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-bg/90 backdrop-blur-md">
+        <div className="mx-auto max-w-4xl px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            {/* Iconic "B" Lettermark Logo */}
-            <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-xl bg-coral-500 font-display font-black text-white text-sm sm:text-base shadow-md shadow-coral-500/30 group-hover:scale-105 transition-transform select-none">
-              B
-            </div>
+            {/* Direct Favicon Vector Brand Icon */}
+            <img
+              src="/favicon.svg"
+              alt="Bidboard Logo"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-sm group-hover:scale-105 transition-transform"
+            />
             <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-coral-400 transition-colors">
               Bidboard<span className="text-coral-500 font-normal">.app</span>
             </span>
@@ -40,8 +42,8 @@ export default function Layout() {
                     to={item.to}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       isActive
-                        ? 'text-white bg-white/[0.06]'
-                        : 'text-neutral-400 hover:text-white hover:bg-white/[0.03]'
+                        ? 'text-white bg-white/[0.08]'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
                     }`}
                   >
                     {item.label}
@@ -52,10 +54,9 @@ export default function Layout() {
 
             <button
               onClick={() => openModal({ initialAmount: 1 })}
-              className="btn-accent !py-1.5 !px-3.5 !text-xs !rounded-lg"
+              className="btn-accent !py-2 !px-4 !text-xs !font-bold !rounded-xl"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Get Listed</span>
+              Get Listed
             </button>
           </nav>
         </div>
@@ -76,7 +77,10 @@ export default function Layout() {
               Market Rules
             </Link>
             <span className="text-neutral-600 hidden sm:inline">·</span>
-            <Link to="/activity" className="text-neutral-400 hover:text-white transition-colors inline-flex items-center gap-0.5">
+            <Link
+              to="/activity"
+              className="text-neutral-400 hover:text-white transition-colors inline-flex items-center gap-0.5"
+            >
               Live Activity <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>

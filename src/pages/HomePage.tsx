@@ -5,15 +5,13 @@ import LeaderboardHero from '../components/LeaderboardHero'
 import LeaderboardPodium from '../components/LeaderboardPodium'
 import ActivityTicker from '../components/ActivityTicker'
 import LeaderboardRow from '../components/LeaderboardRow'
-import { CategoryIcon, Search, Flame } from '../components/CategoryIcon'
-import { RotateCw, Plus, Trophy, Sparkles } from 'lucide-react'
+import { CategoryIcon, Flame } from '../components/CategoryIcon'
+import { RotateCw, Trophy } from 'lucide-react'
 
 export default function HomePage() {
   const listings = useBidStore((s) => s.listings)
   const activeCategory = useBidStore((s) => s.activeCategory)
   const setCategory = useBidStore((s) => s.setCategory)
-  const searchQuery = useBidStore((s) => s.searchQuery)
-  const setSearch = useBidStore((s) => s.setSearch)
   const openModal = useBidStore((s) => s.openModal)
 
   const [page, setPage] = useState(1)
@@ -24,18 +22,8 @@ export default function HomePage() {
     if (activeCategory && activeCategory !== 'all') {
       result = result.filter((l) => l.categorySlug === activeCategory)
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(
-        (l) =>
-          l.title.toLowerCase().includes(q) ||
-          l.displayUrl.toLowerCase().includes(q) ||
-          l.description.toLowerCase().includes(q) ||
-          l.category.toLowerCase().includes(q),
-      )
-    }
     return result
-  }, [listings, activeCategory, searchQuery])
+  }, [listings, activeCategory])
 
   const top3 = filteredListings.slice(0, 3)
   const rest = filteredListings.slice(3)
@@ -46,49 +34,33 @@ export default function HomePage() {
       {/* ── Hero Component ────────────────────────────────────────── */}
       <LeaderboardHero />
 
-      {/* ── Category Filter Pills & Search with Clean Alignment ──── */}
+      {/* ── Category Filter Pills (Clean, no search bar) ─────────── */}
       <div className="my-6">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar flex-1">
-            {CATEGORIES_LIST.map((cat) => {
-              const isActive = activeCategory === cat.slug
-              return (
-                <button
-                  key={cat.slug}
-                  onClick={() => {
-                    setCategory(cat.slug)
-                    setPage(1)
-                  }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
-                    isActive
-                      ? 'bg-coral-500 text-white shadow-md shadow-coral-500/20'
-                      : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
-                  }`}
-                >
-                  {cat.slug === 'all' ? (
-                    <Flame className="w-3.5 h-3.5 text-coral-400" />
-                  ) : (
-                    <CategoryIcon name={cat.slug} className="w-3.5 h-3.5 opacity-80" />
-                  )}
-                  <span>{cat.name}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="relative w-full sm:w-56 flex-shrink-0">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 w-3.5 h-3.5" />
-            <input
-              type="text"
-              placeholder="Search spots..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
-              className="w-full bg-surface border border-white/10 rounded-full pl-9 pr-3 py-2 text-xs text-white placeholder:text-neutral-500 outline-none focus:border-coral-500/60 transition-colors"
-            />
-          </div>
+        <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar justify-start sm:justify-center">
+          {CATEGORIES_LIST.map((cat) => {
+            const isActive = activeCategory === cat.slug
+            return (
+              <button
+                key={cat.slug}
+                onClick={() => {
+                  setCategory(cat.slug)
+                  setPage(1)
+                }}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
+                  isActive
+                    ? 'bg-coral-500 text-white shadow-md shadow-coral-500/20 font-semibold'
+                    : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
+                }`}
+              >
+                {cat.slug === 'all' ? (
+                  <Flame className="w-3.5 h-3.5 text-coral-400" />
+                ) : (
+                  <CategoryIcon name={cat.slug} className="w-3.5 h-3.5 opacity-80" />
+                )}
+                <span>{cat.name}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -109,9 +81,8 @@ export default function HomePage() {
           <div className="mt-6 flex justify-center">
             <button
               onClick={() => openModal({ initialAmount: 1, categorySlug: activeCategory })}
-              className="btn-accent !px-6 !py-2.5 !text-sm !font-bold flex items-center gap-2 !rounded-xl shadow-lg shadow-coral-500/25"
+              className="btn-accent !px-7 !py-2.5 !text-sm !font-bold !rounded-xl shadow-lg shadow-coral-500/25"
             >
-              <Sparkles className="w-4 h-4" />
               Claim #1 Spot for $1 →
             </button>
           </div>
@@ -224,7 +195,6 @@ export default function HomePage() {
             onClick={() => openModal({ initialAmount: 1 })}
             className="btn-accent !px-8 !py-3 !text-sm !font-bold !rounded-xl"
           >
-            <Plus className="w-4 h-4" />
             Claim Your Spot for $1 →
           </button>
         </div>
