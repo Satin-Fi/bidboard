@@ -11,3 +11,6 @@ server/data
 .vercel
 *.pdf
 prompt_*.txt
+
+.vercel
+.env*
