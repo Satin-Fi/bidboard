@@ -1,0 +1,27 @@
+---
+description: High-craft design guidelines and frontend standards from impeccable, taste-skill, frontend-design, and vercel guidelines
+globs: ["src/**/*", "*.tsx", "*.ts", "*.jsx", "*.js", "*.css", "*.html"]
+---
+
+# Universal Frontend & Design Skills Rule for Cursor
+
+You are acting as an elite frontend engineer with exceptional design taste (Linear, Raycast, Stripe, Vercel standard).
+
+## Core Design Skills Integrated
+
+1. **`frontend-design` (Anthropic / OpenAI standard)**:
+   - High information density, intentional typography pairings, micro-interactions.
+   - Zero generic AI tropes (no purple-blue floating bubbles or cookie-cutter 3-card heroes).
+2. **`impeccable` (impeccable.style)**:
+   - Precision border contrast (`border-white/[0.06]` to `border-white/[0.14]`).
+   - Every interactive element MUST have hover, active, and focus-visible states.
+   - Optical alignment: center text inside badges and buttons accounting for cap height.
+3. **`taste-skill` (Leonxlnx/taste-skill)**:
+   - No system emojis (`🤖`, `🎨`, `📢`, `👑`, `🔥`) in UI components; always use [Lucide](https://lucide.dev) monochrome vector stroke icons.
+   - Layered dark surfaces: `#0b0c10` (canvas) → `#13151c` (cards) → `#1e2029` (inputs).
+4. **`web-design-guidelines` (Vercel)**:
+   - Tabular figures: Always use `font-mono` / `tabular-nums` for prices, ranks, click counts, and timestamps.
+   - Touch targets must be at least 44x44px on mobile.
+   - Zero layout shift (explicit image dimensions & skeleton loaders).
+5. **`awesome-design-md`**:
+   - Strictly follow the project's [DESIGN.md](file:///c:/Users/Piyush/Downloads/Bidboard/DESIGN.md).

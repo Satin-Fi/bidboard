@@ -1,0 +1,14 @@
+# Cursor Design & Frontend Rules
+
+Always follow the design guidelines defined in:
+1. `DESIGN.md` (Project Design Specification)
+2. `.agents/skills/frontend-design/SKILL.md` (Visual Hierarchy & Craftsmanship)
+3. `.agents/skills/impeccable/SKILL.md` (Anti-Pattern Elimination & State Completeness)
+4. `.agents/skills/taste-skill/SKILL.md` (Precision Borders & Typography)
+5. `.agents/skills/web-design-guidelines/SKILL.md` (Vercel Web Interface Guidelines)
+
+## Key Directives:
+- **No Emojis in UI**: Use monochrome Lucide SVG vector icons (`<CategoryIcon />` or Lucide icons).
+- **Tabular Numbers**: Use `font-mono` / `tabular-nums` for all dynamic numeric data, prices, and timestamps.
+- **Accessible & Responsive**: 44x44px minimum touch targets on mobile, high-contrast text ratios.
+- **Clean Architecture**: Deterministic ranking logic, integer cent storage, and clean separation between stores and components.
