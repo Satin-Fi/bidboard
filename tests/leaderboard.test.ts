@@ -52,4 +52,38 @@ describe('Leaderboard and formatting rules', () => {
     expect(listings[2].id).toBe('3') // $800 at 1000ms
     expect(listings[3].id).toBe('1') // $500
   })
+
+  it('creates checkout session with correct estimated rank', async () => {
+    const { createCheckoutSession } = await import('../src/lib/payment')
+    const listings = [{ currentBid: 15000 }, { currentBid: 10000 }, { currentBid: 5000 }]
+    
+    // Test bid higher than #1
+    const topSession = await createCheckoutSession(
+      {
+        url: 'https://mysite.com',
+        title: 'My Site',
+        categorySlug: 'ai-automation',
+        amount: 20000,
+        email: 'test@example.com',
+      },
+      listings
+    )
+    expect(topSession.estimatedRank).toBe(1)
+    expect(topSession.amount).toBe(20000)
+    expect(topSession.sessionId).toBeDefined()
+
+    // Test mid-range bid
+    const midSession = await createCheckoutSession(
+      {
+        url: 'https://mysite.com',
+        title: 'My Site',
+        categorySlug: 'ai-automation',
+        amount: 8000,
+        email: 'test@example.com',
+      },
+      listings
+    )
+    expect(midSession.estimatedRank).toBe(3)
+  })
 })
+

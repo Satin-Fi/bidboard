@@ -6,6 +6,8 @@ import ListingPage from './pages/ListingPage'
 import CategoriesPage from './pages/CategoriesPage'
 import ActivityPage from './pages/ActivityPage'
 import RulesPage from './pages/RulesPage'
+import CheckoutPage from './pages/CheckoutPage'
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage'
 import { useBidStore } from './store/useBidStore'
 import { connectWs } from './lib/ws'
 
@@ -26,6 +28,8 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/categories" element={<CategoriesPage />} />

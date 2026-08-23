@@ -10,21 +10,22 @@ html,
 body,
 #root {
   min-height: 100%;
+  background-color: #08090a;
 }
 
 body {
   margin: 0;
-  background: #0b0c10;
+  background: #08090a;
   color: #f3f4f6;
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 @layer base {
   h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.025em;
   }
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
@@ -35,59 +36,67 @@ body {
 
 @layer components {
   .card {
-    @apply rounded-2xl bg-surface border border-white/[0.08] shadow-card-subtle transition-all duration-200;
+    @apply rounded-2xl bg-surface border border-white/[0.06] shadow-card-subtle transition-all duration-150;
   }
   .card-hover {
-    @apply card hover:border-white/[0.18] hover:bg-surface-2 hover:shadow-lg;
+    @apply card hover:border-white/[0.14] hover:bg-surface-2;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium transition-all duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold text-sm transition-all duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-accent {
-    @apply btn bg-coral-500 text-white font-semibold shadow-md shadow-coral-500/20 hover:bg-coral-600 hover:shadow-coral-500/35;
+    @apply btn bg-coral-500 text-white shadow-md shadow-coral-500/20 hover:bg-coral-600 hover:shadow-coral-500/35 hover:scale-[1.01];
   }
   .btn-secondary {
     @apply btn bg-surface-2 text-white border border-white/10 hover:bg-surface-3 hover:border-white/20;
   }
   .btn-ghost {
-    @apply btn bg-white/[0.04] text-neutral-300 hover:bg-white/[0.08] hover:text-white;
-  }
-  .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] px-3 py-1 text-xs font-medium text-muted;
+    @apply btn bg-white/[0.04] text-neutral-300 hover:bg-white/[0.08] hover:text-white border border-white/[0.06];
   }
   .input {
-    @apply w-full rounded-xl bg-surface border border-white/10 px-3.5 py-2.5 text-white placeholder:text-muted-dark outline-none focus:border-coral-500/80 focus:ring-1 focus:ring-coral-500/40 transition-colors;
+    @apply w-full rounded-xl bg-surface border border-white/10 px-3.5 py-2.5 text-white placeholder:text-neutral-500 outline-none focus:border-coral-500/80 focus:ring-1 focus:ring-coral-500/40 transition-colors;
   }
   .label {
-    @apply block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5;
-  }
-  .rank-badge {
-    @apply inline-flex items-center justify-center font-display font-bold rounded-lg text-sm transition-transform;
+    @apply block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5;
   }
 }
 
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0c10;
+  background: #08090a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2433;
+  background: #1e2028;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2e364d;
+  background: #2a2d39;
 }
 
-@keyframes pulseSubtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.02); }
+/* Ambient glow & dot grid */
+.ambient-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
 }
 
-.animate-pulse-subtle {
-  animation: pulseSubtle 3s ease-in-out infinite;
+/* Accessible focus ring standard */
+:focus-visible {
+  outline: 2px solid theme('colors.coral.500');
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

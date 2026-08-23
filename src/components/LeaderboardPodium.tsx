@@ -1,7 +1,7 @@
 import type { LeaderboardListing } from '../types'
 import { formatBid, formatClicks, timeAgo } from '../lib/format'
 import { useBidStore } from '../store/useBidStore'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Trophy, Zap } from 'lucide-react'
 
 interface PodiumProps {
   listings: LeaderboardListing[]
@@ -19,30 +19,46 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
       {top3.map((item, idx) => {
         const nextPrice = item.currentBid + 1
 
+        const rankBadgeStyle =
+          item.rank === 1
+            ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-md shadow-amber-500/25'
+            : item.rank === 2
+            ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-black shadow-sm'
+            : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white shadow-sm'
+
+        const cardBorder =
+          item.rank === 1
+            ? 'border-amber-500/35 shadow-glow-gold/15 hover:border-amber-500/60'
+            : item.rank === 2
+            ? 'border-white/[0.12] hover:border-white/[0.22]'
+            : 'border-white/[0.08] hover:border-white/[0.18]'
+
         return (
           <div key={item.id} className="relative group">
             {/* ── Main Ranked Card ───────────────────────────────── */}
             <div
-              className={`rounded-2xl p-4 sm:p-5 transition-all duration-200 border bg-[#13151c]/90 backdrop-blur-sm ${
-                item.rank === 1
-                  ? 'border-coral-500/40 shadow-lg shadow-coral-500/10 hover:border-coral-500/70'
-                  : 'border-coral-500/25 hover:border-coral-500/50'
-              }`}
+              className={`rounded-2xl p-4 sm:p-5 transition-all duration-150 border bg-surface/95 backdrop-blur-sm ${cardBorder}`}
             >
               <div className="flex items-start sm:items-center justify-between gap-3">
                 {/* Left: Rank + Logo + Content */}
                 <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
                   {/* Rank Badge */}
                   <div className="flex-shrink-0">
-                    <span className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-coral-500 font-display font-extrabold text-white text-sm sm:text-base shadow-sm shadow-coral-500/30">
-                      #{item.rank}
+                    <span
+                      className={`inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl font-display font-extrabold text-sm sm:text-base ${rankBadgeStyle}`}
+                    >
+                      {item.rank === 1 ? (
+                        <Trophy className="w-4 h-4" />
+                      ) : (
+                        `#${item.rank}`
+                      )}
                     </span>
                   </div>
 
                   {/* Icon / Logo */}
                   <div
-                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0 font-display font-bold text-sm ${
-                      item.logoBg || 'bg-zinc-800 text-white'
+                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0 font-display font-bold text-sm shadow-sm ${
+                      item.logoBg || 'bg-surface-2 text-white border border-white/10'
                     }`}
                   >
                     {item.logoText || item.title.slice(0, 2).toUpperCase()}
@@ -56,10 +72,10 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => trackClick(item.id)}
-                        className="font-display font-bold text-base sm:text-lg text-white hover:text-coral-400 transition-colors truncate inline-flex items-center gap-1"
+                        className="font-display font-bold text-base sm:text-lg text-white hover:text-coral-400 transition-colors truncate inline-flex items-center gap-1 group/link"
                       >
                         {item.title}
-                        <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover/link:opacity-100 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-all" />
                       </a>
                     </div>
 
@@ -71,9 +87,10 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-[11px] text-neutral-400">
                       <span>{timeAgo(item.createdAt)}</span>
                       <span>·</span>
-                      <span className="text-neutral-300">{item.category}</span>
+                      <span className="text-neutral-300 font-medium">{item.category}</span>
                       <span>·</span>
-                      <span className="text-neutral-400 font-mono">
+                      <span className="text-neutral-400 font-mono inline-flex items-center gap-0.5">
+                        <Zap className="w-3 h-3 text-amber-400/80" />
                         {formatClicks(item.clickCount)} clicks
                       </span>
                     </div>
@@ -82,7 +99,11 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
 
                 {/* Right: Price & Outbid action */}
                 <div className="flex flex-col items-end flex-shrink-0 pl-2">
-                  <span className="font-display font-black text-xl sm:text-2xl text-coral-500 tracking-tight select-all">
+                  <span
+                    className={`font-display font-black text-xl sm:text-2xl font-mono tracking-tight select-all ${
+                      item.rank === 1 ? 'text-amber-400' : 'text-coral-500'
+                    }`}
+                  >
                     {formatBid(item.currentBid)}
                   </span>
                   <button
@@ -112,9 +133,9 @@ export default function LeaderboardPodium({ listings }: PodiumProps) {
                       initialAmount: nextPrice,
                     })
                   }
-                  className="px-3 py-0.5 rounded-full bg-[#13151c] border border-coral-500/40 text-[10px] sm:text-xs font-semibold text-coral-400 hover:bg-coral-500 hover:text-white shadow-sm transition-all hover:scale-105"
+                  className="px-3 py-0.5 rounded-full bg-surface-2 border border-white/[0.12] text-[10px] sm:text-xs font-semibold text-neutral-300 hover:text-white hover:border-coral-500/60 hover:bg-surface-3 shadow-sm transition-all hover:scale-105"
                 >
-                  claim this rank for {formatBid(nextPrice)}
+                  claim this rank for <span className="font-mono text-coral-400">{formatBid(nextPrice)}</span>
                 </button>
               </div>
             )}

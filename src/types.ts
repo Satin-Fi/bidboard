@@ -80,3 +80,37 @@ export const CATEGORIES_LIST: Category[] = [
 ]
 
 export type CategorySlug = typeof CATEGORIES_LIST[number]['slug']
+
+export interface CheckoutSessionRequest {
+  url: string
+  title: string
+  description?: string
+  categorySlug: string
+  amount: number
+  email: string
+  bidderName?: string
+  isBusiness?: boolean
+  listingId?: string
+}
+
+export interface CheckoutSessionResponse {
+  sessionId: string
+  checkoutUrl?: string
+  status: 'pending' | 'completed' | 'redirect'
+  amount: number
+  estimatedRank: number
+}
+
+export interface CompletedOrder {
+  id: string
+  sessionId: string
+  amount: number
+  email: string
+  url: string
+  title: string
+  description: string
+  categorySlug: string
+  rank: number
+  createdAt: number
+}
+

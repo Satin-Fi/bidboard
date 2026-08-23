@@ -1,16 +1,13 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBidStore } from '../store/useBidStore'
 import { CATEGORIES_LIST } from '../types'
 import { calculateRank } from '../lib/rules'
 import { formatBid } from '../lib/format'
-import { useUiStore } from '../store/useUiStore'
 
 export default function SellPage() {
   const navigate = useNavigate()
   const listings = useBidStore((s) => s.listings)
-  const placeBid = useBidStore((s) => s.placeBid)
-  const pushToast = useUiStore((s) => s.push)
 
   const top1 = listings[0]
   const [url, setUrl] = useState('')
@@ -26,17 +23,14 @@ export default function SellPage() {
     e.preventDefault()
     if (!url.trim()) return
 
-    const result = placeBid({
+    const params = new URLSearchParams({
       url: url.trim(),
+      amount: String(amount),
       title: title.trim(),
-      description: description.trim(),
-      categorySlug: category,
-      amount: Number(amount),
-      bidder: bidder.trim(),
+      desc: description.trim(),
+      category,
     })
-
-    pushToast(`Secured rank #${result.rank} for ${formatBid(amount)}!`, 'ok')
-    navigate('/')
+    navigate(`/checkout?${params.toString()}`)
   }
 
   return (
