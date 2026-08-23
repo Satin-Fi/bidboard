@@ -1,4 +1,4 @@
-﻿// Vercel Serverless Function: /api/checkout
+// Vercel Serverless Function: /api/checkout
 // Creates live checkout sessions for Polar.sh (or Stripe)
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -13,7 +13,6 @@ export default async function handler(req: any, res: any) {
     }
 
     const polarToken = process.env.POLAR_ACCESS_TOKEN || 'polar_oat_RnrOdhcKt4GMXOU8lOHRxRUli8J21S0Y2oFxt3EQibq'
-    const polarOrgId = process.env.POLAR_ORGANIZATION_ID || 'd92faaed-47cd-47fd-afb8-c029dea5dc92'
     const polarProductId = process.env.POLAR_PRODUCT_ID || 'd567eea3-5fb2-47c6-b9af-1839205e9eb8'
     const stripeSecret = process.env.STRIPE_SECRET_KEY
 
