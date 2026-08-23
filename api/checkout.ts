@@ -35,21 +35,31 @@ export default async function handler(req: any, res: any) {
     const cleanOrigin = origin.replace(/\/$/, '')
     const successUrl = `${cleanOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&rank=${estimatedRank || 1}&amount=${amount}&url=${encodeURIComponent(url)}&title=${encodeURIComponent(title || '')}`
 
+    // Polar metadata validation: strings must not be empty
+    const rawMeta: Record<string, any> = {
+      url,
+      title: title || url.replace(/^https?:\/\//, ''),
+      description: description || undefined,
+      categorySlug: categorySlug || 'ai-automation',
+      bidderName: bidderName || 'Anonymous',
+      isBusiness: isBusiness ? 'true' : undefined,
+      listingId: listingId || undefined,
+      targetRank: String(estimatedRank || 1),
+    }
+
+    const cleanMeta: Record<string, string> = {}
+    for (const [k, v] of Object.entries(rawMeta)) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        cleanMeta[k] = String(v).trim()
+      }
+    }
+
     const payload: any = {
       product_id: polarProductId,
       amount: Math.round(Number(amount) * 100), // in cents
       currency: 'usd',
       success_url: successUrl,
-      metadata: {
-        url,
-        title: title || url.replace(/^https?:\/\//, ''),
-        description: description || '',
-        categorySlug: categorySlug || 'ai-automation',
-        bidderName: bidderName || 'Anonymous',
-        isBusiness: String(Boolean(isBusiness)),
-        listingId: listingId || '',
-        targetRank: String(estimatedRank || 1),
-      },
+      metadata: cleanMeta,
     }
 
     if (email && email.includes('@')) {
